@@ -1,4 +1,6 @@
-#include <stdbool.h>;
+#include <stdbool.h>
+#include <stdint.h>
+#include "adxl34x.h"
 
 
 /* ADXL345/6 Register Map */
@@ -96,729 +98,325 @@
 #define RANGE_PM_8g		2
 #define RANGE_PM_16g	3
 
+typedef struct {
+    const uint8_t   dev_id; 
+    uint8_t thresh_tap; 
+    int8_t  offset_x; 
+    int8_t  offset_y; 
+    int8_t  offset_z;
+    /*The DUR register is eight bits and contains an unsigned time
+    value representing the maximum time that an event must be
+    above the THRESH_TAP threshold to qualify as a tap event. The
+    scale factor is 625 μs/LSB. A value of 0 disables the single tap/
+    double tap functions. */
+    uint8_t dur; 
+    /*The latent register is eight bits and contains an unsigned time
+    value representing the wait time from the detection of a tap
+    event to the start of the time window (defined by the window
+    register) during which a possible second tap event can be detected.
+    The scale factor is 1.25 ms/LSB. A value of 0 disables the double tap
+    function. */
+    uint8_t latent; 
+    /*The window register is eight bits and contains an unsigned time
+    value representing the amount of time after the expiration of the
+    latency time (determined by the latent register) during which a
+    second valid tap can begin. The scale factor is 1.25 ms/LSB. A
+    value of 0 disables the double tap function.*/
+    uint8_t window;
+    /*The THRESH_ACT register is eight bits and holds the threshold
+    value for detecting activity. The data format is unsigned, so the
+    magnitude of the activity event is compared with the value in
+    the THRESH_ACT register. The scale factor is 62.5 mg/LSB.
+    A value of 0 may result in undesirable behavior if the activity
+    interrupt is enabled.*/
+    uint8_t threshold_activity;
+    /*The THRESH_INACT register is eight bits and holds the threshold
+    value for detecting inactivity. The data format is unsigned, so
+    the magnitude of the inactivity event is compared with the value
+    in the THRESH_INACT register. The scale factor is 62.5 mg/LSB.
+    A value of 0 may result in undesirable behavior if the inactivity
+    interrupt is enabled.*/
+    uint8_t threshod_inactivity;
+    /*The TIME_INACT register is eight bits and contains an unsigned
+    time value representing the amount of time that acceleration
+    must be less than the value in the THRESH_INACT register for
+    inactivity to be declared. The scale factor is 1 sec/LSB. Unlike
+    the other interrupt functions, which use unfiltered data (see the
+    Threshold section), the inactivity function uses filtered output
+    data. At least one output sample must be generated for the
+    inactivity interrupt to be triggered. This results in the function
+    appearing unresponsive if the TIME_INACT register is set to a
+    value less than the time constant of the output data rate. A value
+    of 0 results in an interrupt when the output data is less than the
+    value in the THRESH_INACT register.*/
+    uint8_t time_inactivity; 
+    /*D7 ACT ac/dc, D6 ACT_X enable, D5 ACT_Y enable, D4 ACT_Z enable         
+    D3 INACT ac/dc, D2 INACT_X enable, D1 INACT_Y enable, D0 INACT_Z enable
+    A setting of 0 selects dc-coupled operation, and a setting of 1
+    enables ac-coupled operation. In dc-coupled operation, the
+    current acceleration magnitude is compared directly with
+    THRESH_ACT and THRESH_INACT to determine whether
+    activity or inactivity is detected.
+    In ac-coupled operation for activity detection, the acceleration
+    value at the start of activity detection is taken as a reference
+    value. New samples of acceleration are then compared to this
+    reference value, and if the magnitude of the difference exceeds
+    the THRESH_ACT value, the device triggers an activity interrupt.*/
+    uint8_t act_inact_ctl;
+    /*The THRESH_FF register is eight bits and holds the threshold
+    value, in unsigned format, for free-fall detection. The acceleration on
+    all axes is compared with the value in THRESH_FF to determine if
+    a free-fall event occurred. The scale factor is 62.5 mg/LSB. Note
+    that a value of 0 mg may result in undesirable behavior if the freefall
+    interrupt is enabled. Values between 300 mg and 600 mg
+    (0x05 to 0x09) are recommended.*/
+    uint8_t threshold_ff;
+    /*The TIME_FF register is eight bits and stores an unsigned time
+    value representing the minimum time that the value of all axes
+    must be less than THRESH_FF to generate a free-fall interrupt.
+    The scale factor is 5 ms/LSB. A value of 0 may result in undesirable
+    behavior if the free-fall interrupt is enabled. Values between 100 ms
+    and 350 ms (0x14 to 0x46) are recommended.*/
+    uint8_t time_ff; 
+    /*D7 D6 D5 D4 = 0, D3 Suppress  D2 TAP_X enable, D1 TAP_Y enable, D0 TAP_Z enable
+    Setting the suppress bit suppresses double tap detection if
+    acceleration greater than the value in THRESH_TAP is present
+    between taps. See the Tap Detection section for more details.
+    A setting of 1 in the TAP_X enable, TAP_Y enable, or TAP_Z
+    enable bit enables x-, y-, or z-axis participation in tap detection.
+    A setting of 0 excludes the selected axis from participation in
+    tap detection.*/
+    uint8_t tap_axes; 
+    /*D7 = 0, D6 ACT_X source, D5 ACT_Y source, D4 ACT_Z source,
+    D3 Asleep, D2 TAP_X source, D1 TAP_Y source, D0 TAP_Z source
+    ACT_x Source and TAP_x Source Bits 
+    These bits indicate the first axis involved in a tap or activity
+    event. A setting of 1 corresponds to involvement in the event,
+    and a setting of 0 corresponds to no involvement. When new
+    data is available, these bits are not cleared but are overwritten by
+    the new data. The ACT_TAP_STATUS register should be read
+    before clearing the interrupt. Disabling an axis from participation
+    clears the corresponding source bit when the next activity or
+    single tap/double tap event occurs.
+    Asleep Bit 
+    A setting of 1 in the asleep bit indicates that the part is asleep,
+    and a setting of 0 indicates that the part is not asleep. This bit
+    toggles only if the device is configured for auto sleep. See the
+    AUTO_SLEEP Bit section for more information on autosleep
+    mode.*/
+    uint8_t act_tap_status;
+    /*D7 -D5 = 0, D4 LOW_POWER D3-D0 Rate
+    A setting of 0 in the LOW_POWER bit selects normal operation,
+    and a setting of 1 selects reduced power operation, which has
+    somewhat higher noise*/
+    uint8_t bw_rate;
+    /*D7-D6 = 0, D5 Link, D4 AUTO_SLEEP, D3 Measure, D2 Sleep D1-D0 Wakeup 
+    Link Bit 
+    A setting of 1 in the link bit with both the activity and inactivity
+    functions enabled delays the start of the activity function until
+    inactivity is detected. After activity is detected, inactivity detection
+    begins, preventing the detection of activity. This bit serially links
+    the activity and inactivity functions. When this bit is set to 0,
+    the inactivity and activity functions are concurrent. Additional
+    information can be found in the Link Mode section.
+    When clearing the link bit, it is recommended that the part be
+    placed into standby mode and then set back to measurement
+    mode with a subsequent write. This is done to ensure that the
+    device is properly biased if sleep mode is manually disabled;
+    otherwise, the first few samples of data after the link bit is cleared
+    may have additional noise, especially if the device was asleep
+    when the bit was cleared.
+    AUTO_SLEEP Bit 
+    If the link bit is set, a setting of 1 in the AUTO_SLEEP bit enables
+    the auto-sleep functionality. In this mode, the ADXL345 automatically
+    switches to sleep mode if the inactivity function is
+    enabled and inactivity is detected (that is, when acceleration is
+    below the THRESH_INACT value for at least the time indicated
+    by TIME_INACT). If activity is also enabled, the ADXL345
+    automatically wakes up from sleep after detecting activity and
+    returns to operation at the output data rate set in the BW_RATE
+    register. A setting of 0 in the AUTO_SLEEP bit disables automatic
+    switching to sleep mode. See the description of the Sleep Bit in
+    this section for more information on sleep mode.
+    If the link bit is not set, the AUTO_SLEEP feature is disabled
+    and setting the AUTO_SLEEP bit does not have an impact on
+    device operation. Refer to the Link Bit section or the Link Mode
+    section for more information on utilization of the link feature.
+    When clearing the AUTO_SLEEP bit, it is recommended that the
+    part be placed into standby mode and then set back to measurement
+    mode with a subsequent write. This is done to ensure that
+    the device is properly biased if sleep mode is manually disabled;
+    otherwise, the first few samples of data after the AUTO_SLEEP
+    bit is cleared may have additional noise, especially if the device
+    was asleep when the bit was cleared.
+    Measure Bit 
+    A setting of 0 in the measure bit places the part into standby mode,
+    and a setting of 1 places the part into measurement mode. The
+    ADXL345 powers up in standby mode with minimum power
+    consumption.
+    Sleep Bit 
+    A setting of 0 in the sleep bit puts the part into the normal mode
+    of operation, and a setting of 1 places the part into sleep mode.
+    Sleep mode suppresses DATA_READY, stops transmission of data
+    to FIFO, and switches the sampling rate to one specified by the
+    wakeup bits. In sleep mode, only the activity function can be used.
+    When the DATA_READY interrupt is suppressed, the output
+    data registers (Register 0x32 to Register 0x37) are still updated
+    at the sampling rate set by the wakeup bits (D1:D0).
+    When clearing the sleep bit, it is recommended that the part be
+    placed into standby mode and then set back to measurement
+    mode with a subsequent write. This is done to ensure that the
+    device is properly biased if sleep mode is manually disabled;
+    otherwise, the first few samples of data after the sleep bit is
+    cleared may have additional noise, especially if the device was
+    asleep when the bit was cleared.
+    Wakeup Bits 
+    These bits control the frequency of readings in sleep mode as
+    described in Table 20.*/
+    uint8_t power_ctl;
+    /*D7 DATA_READY, D6 SINGLE_TAP, D5 DOUBLE_TAP, D4 Activity
+    D3 Inactivity, D2 FREE_FALL, D1 Watermark D0 Overrun*/ 
+    uint8_t int_enable; 
+    /*D7 DATA_READY, D6 SINGLE_TAP, D5 DOUBLE_TAP, D4 Activity
+    D3 Inactivity, D2 FREE_FALL, D1 Watermark D0 Overrun
+    Any bits set to 0 in this register send their respective interrupts to
+    the INT1 pin, whereas bits set to 1 send their respective interrupts
+    to the INT2 pin. All selected interrupts for a given pin are OR’ed.*/
+    uint8_t int_map;
+    /*D7 DATA_READY, D6 SINGLE_TAP, D5 DOUBLE_TAP, D4 Activity
+    D3 Inactivity, D2 FREE_FALL, D1 Watermark D0 Overrun
+    Bits set to 1 in this register indicate that their respective functions
+    have triggered an event, whereas a value of 0 indicates that the
+    corresponding event has not occurred. The DATA_READY,
+    watermark, and overrun bits are always set if the corresponding
+    events occur, regardless of the INT_ENABLE register settings,
+    and are cleared by reading data from the DATAX, DATAY, and
+    DATAZ registers. The DATA_READY and watermark bits may
+    require multiple reads, as indicated in the FIFO mode descriptions
+    in the FIFO section. Other bits, and the corresponding interrupts,
+    are cleared by reading the INT_SOURCE register.*/
+    uint8_t int_source; 
+    /* D7 SELF_TEST, D6 SPI, D5 INT_INVERT, D4 = 0, D3 FULL_RES, D2 Justify D1-D0 Range
+    The DATA_FORMAT register controls the presentation of data
+    to Register 0x32 through Register 0x37. All data, except that for
+    the ±16 g range, must be clipped to avoid rollover.
+    SELF_TEST Bit 
+    A setting of 1 in the SELF_TEST bit applies a self-test force to
+    the sensor, causing a shift in the output data. A value of 0 disables
+    the self-test force.
+    SPI Bit 
+    A value of 1 in the SPI bit sets the device to 3-wire SPI mode,
+    and a value of 0 sets the device to 4-wire SPI mode.
+    INT_INVERT Bit 
+    A value of 0 in the INT_INVERT bit sets the interrupts to active
+    high, and a value of 1 sets the interrupts to active low.
+    FULL_RES Bit 
+    When this bit is set to a value of 1, the device is in full resolution
+    mode, where the output resolution increases with the g range
+    set by the range bits to maintain a 4 mg/LSB scale factor. When
+    the FULL_RES bit is set to 0, the device is in 10-bit mode, and
+    the range bits determine the maximum g range and scale factor.
+    Justify Bit 
+    A setting of 1 in the justify bit selects left-justified (MSB) mode,
+    and a setting of 0 selects right-justified mode with sign extension.*/ 
+    uint8_t data_format;
+    /*These six bytes (Register 0x32 to Register 0x37) are eight bits
+each and hold the output data for each axis. Register 0x32 and
+Register 0x33 hold the output data for the x-axis, Register 0x34 and
+Register 0x35 hold the output data for the y-axis, and Register 0x36
+and Register 0x37 hold the output data for the z-axis. The output
+data is twos complement, with DATAx0 as the least significant
+byte and DATAx1 as the most significant byte, where x represent X,
+Y, or Z. The DATA_FORMAT register (Address 0x31) controls
+the format of the data. It is recommended that a multiple-byte
+read of all registers be performed to prevent a change in data
+between reads of sequential registers.*/
+    uint8_t data_x0; 
+    uint8_t data_x1;
+    uint8_t data_y0;
+    uint8_t data_y1; 
+    uint8_t data_z0;
+    uint8_t data_z1;
+    /*D7-D6 FIFO_MODE, D5 Trigger, D4-D0 Samples
+    Trigger Bit 
+    A value of 0 in the trigger bit links the trigger event of trigger mode
+    to INT1, and a value of 1 links the trigger event to INT2.
+    Samples Bits 
+    The function of these bits depends on the FIFO mode selected
+    (see Table 23). Entering a value of 0 in the samples bits immediately
+    sets the watermark status bit in the INT_SOURCE register,
+    regardless of which FIFO mode is selected. Undesirable operation
+    may occur if a value of 0 is used for the samples bits when trigger
+    mode is used.*/ 
+    uint8_t fifo_ctl; 
+    /*D7 FIFO_TRIG, D6=0, D5-D0 Entries
+    FIFO_TRIG Bit 
+    A 1 in the FIFO_TRIG bit corresponds to a trigger event occurring,
+    and a 0 means that a FIFO trigger event has not occurred.
+    Entries Bits 
+    These bits report how many data values are stored in FIFO.
+    Access to collect the data from FIFO is provided through the
+    DATAX, DATAY, and DATAZ registers. FIFO reads must be
+    done in burst or multiple-byte mode because each FIFO level is
+    cleared after any read (single- or multiple-byte) of FIFO. FIFO
+    stores a maximum of 32 entries, which equates to a maximum
+    of 33 entries available at any given time because an additional
+    entry is available at the output filter of the device.*/ 
+    uint8_t fifo_status; 
+} t_adxl34x_reg;
 
+t_adxl34x_reg adxl34x_reg;
+static const t_adxl34x_reg  adxl34x_reg_init = {
+    0b11100101, //id
+    10,			//uint8_t thresh_tap = ; 
+    0,			//int8_t  offset_x = 0; 
+    0,			//int8_t  offset_y = 0; 
+    0,			//int8_t  offset_z = 0;
+    0,			//uint8_t dur = 0; 
+    0,			//uint8_t latent; 
+    0,			//uint8_t window;
+    5,			//uint8_t threshold_activity;
+    5,			//uint8_t threshod_inactivity;
+    1,			//uint8_t time_inactivity; 
+    0,			//uint8_t act_inact_ctl;
+    5,			//uint8_t threshold_ff;
+    1,			//uint8_t time_ff; 
+    0,			//uint8_t tap_axes; 
+    0,			//uint8_t act_tap_status; 
+    0,			//uint8_t bw_rate;
+    0,			//uint8_t power_ctl; 
+    0,			//uint8_t int_enable; 
+    0,			//uint8_t int_map;
+    0,			//uint8_t int_source; 
+    0,			//uint8_t data_format; 
+    0,			//uint8_t data_x0; 
+    0,			//uint8_t data_x1;
+    0,			//uint8_t data_y0;
+    0,			//uint8_t data_y1; 
+    0,			//uint8_t data_z0;
+    0,			//uint8_t data_z1;
+    0,			//uint8_t fifo_ctl; 
+    0			//uint8_t fifo_status; 
+} ;
 
-struct axis_triple {
-	int x;
-	int y;
-	int z;
-};
-
-struct adxl34x {
-	struct device *dev;
-	struct input_dev *input;
-	struct mutex mutex;	/* reentrant protection for struct */
-	struct adxl34x_platform_data pdata;
-	struct axis_triple swcal;
-	struct axis_triple hwcal;
-	struct axis_triple saved;
-	char phys[32];
-	unsigned orient2d_saved;
-	unsigned orient3d_saved;
-	bool disabled;	/* P: mutex */
-	bool opened;	/* P: mutex */
-	bool suspended;	/* P: mutex */
-	bool fifo_delay;
-	int irq;
-	unsigned model;
-	unsigned int_mask;
-
-	const struct adxl34x_bus_ops *bops;
-};
-
-static const struct adxl34x_platform_data adxl34x_default_init = {
-	.tap_threshold = 35,
-	.tap_duration = 3,
-	.tap_latency = 20,
-	.tap_window = 20,
-	.tap_axis_control = ADXL_TAP_X_EN | ADXL_TAP_Y_EN | ADXL_TAP_Z_EN,
-	.act_axis_control = 0xFF,
-	.activity_threshold = 6,
-	.inactivity_threshold = 4,
-	.inactivity_time = 3,
-	.free_fall_threshold = 8,
-	.free_fall_time = 0x20,
-	.data_rate = 8,
-	.data_range = ADXL_FULL_RES,
-
-	.ev_type = EV_ABS,
-	.ev_code_x = ABS_X,	/* EV_REL */
-	.ev_code_y = ABS_Y,	/* EV_REL */
-	.ev_code_z = ABS_Z,	/* EV_REL */
-
-	.ev_code_tap = {BTN_TOUCH, BTN_TOUCH, BTN_TOUCH}, /* EV_KEY {x,y,z} */
-	.power_mode = ADXL_AUTO_SLEEP | ADXL_LINK,
-	.fifo_mode = ADXL_FIFO_STREAM,
-	.watermark = 0,
-};
-
-static void adxl34x_get_triple(struct adxl34x *ac, struct axis_triple *axis)
+bool device_write_byte(uint8_t address, uint8_t value)
 {
-	short buf[3];
-
-	ac->bops->read_block(ac->dev, DATAX0, DATAZ1 - DATAX0 + 1, buf);
-
-	ac->saved.x = (s16) le16_to_cpu(buf[0]);
-	axis->x = ac->saved.x;
-
-	ac->saved.y = (s16) le16_to_cpu(buf[1]);
-	axis->y = ac->saved.y;
-
-	ac->saved.z = (s16) le16_to_cpu(buf[2]);
-	axis->z = ac->saved.z;
+  printf("Writing value %x in register %x", value, address);
+  return true;
 }
 
-static void adxl34x_service_ev_fifo(struct adxl34x *ac)
+bool device_read_byte(uint8_t address, uint8_t *readvalue);
+
+bool enterAutoSleepMode (int threshold, int time)
 {
-	struct adxl34x_platform_data *pdata = &ac->pdata;
-	struct axis_triple axis;
-
-	adxl34x_get_triple(ac, &axis);
-
-	input_event(ac->input, pdata->ev_type, pdata->ev_code_x,
-		    axis.x - ac->swcal.x);
-	input_event(ac->input, pdata->ev_type, pdata->ev_code_y,
-		    axis.y - ac->swcal.y);
-	input_event(ac->input, pdata->ev_type, pdata->ev_code_z,
-		    axis.z - ac->swcal.z);
+    if (device_write_byte(THRESH_INACT, threshold) == false)
+       return false;
+    if(device_write_byte(TIME_INACT, time) == false)
+       return false;
+	uint8_t power_ctl_save = adxl34x_reg.power_ctl;
+	power_ctl_save |= PCTL_AUTO_SLEEP | PCTL_LINK;
+	if (device_write_byte(POWER_CTL, power_ctl_save) == false)
+	return false;
+	adxl34x_reg.power_ctl = power_ctl_save;
+	return true;
 }
-
-static void adxl34x_report_key_single(struct input_dev *input, int key)
-{
-	input_report_key(input, key, true);
-	input_sync(input);
-	input_report_key(input, key, false);
-}
-
-static void adxl34x_send_key_events(struct adxl34x *ac,
-		struct adxl34x_platform_data *pdata, int status, int press)
-{
-	int i;
-
-	for (i = ADXL_X_AXIS; i <= ADXL_Z_AXIS; i++) {
-		if (status & (1 << (ADXL_Z_AXIS - i)))
-			input_report_key(ac->input,
-					 pdata->ev_code_tap[i], press);
-	}
-}
-
-static void adxl34x_do_tap(struct adxl34x *ac,
-		struct adxl34x_platform_data *pdata, int status)
-{
-	adxl34x_send_key_events(ac, pdata, status, true);
-	input_sync(ac->input);
-	adxl34x_send_key_events(ac, pdata, status, false);
-}
-
-static irqreturn_t adxl34x_irq(int irq, void *handle)
-{
-	struct adxl34x *ac = handle;
-	struct adxl34x_platform_data *pdata = &ac->pdata;
-	int int_stat, tap_stat, samples, orient, orient_code;
-
-	/*
-	 * ACT_TAP_STATUS should be read before clearing the interrupt
-	 * Avoid reading ACT_TAP_STATUS in case TAP detection is disabled
-	 */
-
-	if (pdata->tap_axis_control & (TAP_X_EN | TAP_Y_EN | TAP_Z_EN))
-		tap_stat = AC_READ(ac, ACT_TAP_STATUS);
-	else
-		tap_stat = 0;
-
-	int_stat = AC_READ(ac, INT_SOURCE);
-
-	if (int_stat & FREE_FALL)
-		adxl34x_report_key_single(ac->input, pdata->ev_code_ff);
-
-	if (int_stat & OVERRUN)
-		dev_dbg(ac->dev, "OVERRUN\n");
-
-	if (int_stat & (SINGLE_TAP | DOUBLE_TAP)) {
-		adxl34x_do_tap(ac, pdata, tap_stat);
-
-		if (int_stat & DOUBLE_TAP)
-			adxl34x_do_tap(ac, pdata, tap_stat);
-	}
-
-	if (pdata->ev_code_act_inactivity) {
-		if (int_stat & ACTIVITY)
-			input_report_key(ac->input,
-					 pdata->ev_code_act_inactivity, 1);
-		if (int_stat & INACTIVITY)
-			input_report_key(ac->input,
-					 pdata->ev_code_act_inactivity, 0);
-	}
-
-	/*
-	 * ORIENTATION SENSING ADXL346 only
-	 */
-	if (pdata->orientation_enable) {
-		orient = AC_READ(ac, ORIENT);
-		if ((pdata->orientation_enable & ADXL_EN_ORIENTATION_2D) &&
-		    (orient & ADXL346_2D_VALID)) {
-
-			orient_code = ADXL346_2D_ORIENT(orient);
-			/* Report orientation only when it changes */
-			if (ac->orient2d_saved != orient_code) {
-				ac->orient2d_saved = orient_code;
-				adxl34x_report_key_single(ac->input,
-					pdata->ev_codes_orient_2d[orient_code]);
-			}
-		}
-
-		if ((pdata->orientation_enable & ADXL_EN_ORIENTATION_3D) &&
-		    (orient & ADXL346_3D_VALID)) {
-
-			orient_code = ADXL346_3D_ORIENT(orient) - 1;
-			/* Report orientation only when it changes */
-			if (ac->orient3d_saved != orient_code) {
-				ac->orient3d_saved = orient_code;
-				adxl34x_report_key_single(ac->input,
-					pdata->ev_codes_orient_3d[orient_code]);
-			}
-		}
-	}
-
-	if (int_stat & (DATA_READY | WATERMARK)) {
-
-		if (pdata->fifo_mode)
-			samples = ENTRIES(AC_READ(ac, FIFO_STATUS)) + 1;
-		else
-			samples = 1;
-
-		for (; samples > 0; samples--) {
-			adxl34x_service_ev_fifo(ac);
-			/*
-			 * To ensure that the FIFO has
-			 * completely popped, there must be at least 5 us between
-			 * the end of reading the data registers, signified by the
-			 * transition to register 0x38 from 0x37 or the CS pin
-			 * going high, and the start of new reads of the FIFO or
-			 * reading the FIFO_STATUS register. For SPI operation at
-			 * 1.5 MHz or lower, the register addressing portion of the
-			 * transmission is sufficient delay to ensure the FIFO has
-			 * completely popped. It is necessary for SPI operation
-			 * greater than 1.5 MHz to de-assert the CS pin to ensure a
-			 * total of 5 us, which is at most 3.4 us at 5 MHz
-			 * operation.
-			 */
-			if (ac->fifo_delay && (samples > 1))
-				udelay(3);
-		}
-	}
-
-	input_sync(ac->input);
-
-	return IRQ_HANDLED;
-}
-
-static void __adxl34x_disable(struct adxl34x *ac)
-{
-	/*
-	 * A '0' places the ADXL34x into standby mode
-	 * with minimum power consumption.
-	 */
-	AC_WRITE(ac, POWER_CTL, 0);
-}
-
-static void __adxl34x_enable(struct adxl34x *ac)
-{
-	AC_WRITE(ac, POWER_CTL, ac->pdata.power_mode | PCTL_MEASURE);
-}
-
-void adxl34x_suspend(struct adxl34x *ac)
-{
-	mutex_lock(&ac->mutex);
-
-	if (!ac->suspended && !ac->disabled && ac->opened)
-		__adxl34x_disable(ac);
-
-	ac->suspended = true;
-
-	mutex_unlock(&ac->mutex);
-}
-EXPORT_SYMBOL_GPL(adxl34x_suspend);
-
-void adxl34x_resume(struct adxl34x *ac)
-{
-	mutex_lock(&ac->mutex);
-
-	if (ac->suspended && !ac->disabled && ac->opened)
-		__adxl34x_enable(ac);
-
-	ac->suspended = false;
-
-	mutex_unlock(&ac->mutex);
-}
-EXPORT_SYMBOL_GPL(adxl34x_resume);
-
-static ssize_t adxl34x_disable_show(struct device *dev,
-				    struct device_attribute *attr, char *buf)
-{
-	struct adxl34x *ac = dev_get_drvdata(dev);
-
-	return sprintf(buf, "%u\n", ac->disabled);
-}
-
-static ssize_t adxl34x_disable_store(struct device *dev,
-				     struct device_attribute *attr,
-				     const char *buf, size_t count)
-{
-	struct adxl34x *ac = dev_get_drvdata(dev);
-	unsigned int val;
-	int error;
-
-	error = kstrtouint(buf, 10, &val);
-	if (error)
-		return error;
-
-	mutex_lock(&ac->mutex);
-
-	if (!ac->suspended && ac->opened) {
-		if (val) {
-			if (!ac->disabled)
-				__adxl34x_disable(ac);
-		} else {
-			if (ac->disabled)
-				__adxl34x_enable(ac);
-		}
-	}
-
-	ac->disabled = !!val;
-
-	mutex_unlock(&ac->mutex);
-
-	return count;
-}
-
-static DEVICE_ATTR(disable, 0664, adxl34x_disable_show, adxl34x_disable_store);
-
-static ssize_t adxl34x_calibrate_show(struct device *dev,
-				      struct device_attribute *attr, char *buf)
-{
-	struct adxl34x *ac = dev_get_drvdata(dev);
-	ssize_t count;
-
-	mutex_lock(&ac->mutex);
-	count = sprintf(buf, "%d,%d,%d\n",
-			ac->hwcal.x * 4 + ac->swcal.x,
-			ac->hwcal.y * 4 + ac->swcal.y,
-			ac->hwcal.z * 4 + ac->swcal.z);
-	mutex_unlock(&ac->mutex);
-
-	return count;
-}
-
-static ssize_t adxl34x_calibrate_store(struct device *dev,
-				       struct device_attribute *attr,
-				       const char *buf, size_t count)
-{
-	struct adxl34x *ac = dev_get_drvdata(dev);
-
-	/*
-	 * Hardware offset calibration has a resolution of 15.6 mg/LSB.
-	 * We use HW calibration and handle the remaining bits in SW. (4mg/LSB)
-	 */
-
-	mutex_lock(&ac->mutex);
-	ac->hwcal.x -= (ac->saved.x / 4);
-	ac->swcal.x = ac->saved.x % 4;
-
-	ac->hwcal.y -= (ac->saved.y / 4);
-	ac->swcal.y = ac->saved.y % 4;
-
-	ac->hwcal.z -= (ac->saved.z / 4);
-	ac->swcal.z = ac->saved.z % 4;
-
-	AC_WRITE(ac, OFSX, (s8) ac->hwcal.x);
-	AC_WRITE(ac, OFSY, (s8) ac->hwcal.y);
-	AC_WRITE(ac, OFSZ, (s8) ac->hwcal.z);
-	mutex_unlock(&ac->mutex);
-
-	return count;
-}
-
-static DEVICE_ATTR(calibrate, 0664,
-		   adxl34x_calibrate_show, adxl34x_calibrate_store);
-
-static ssize_t adxl34x_rate_show(struct device *dev,
-				 struct device_attribute *attr, char *buf)
-{
-	struct adxl34x *ac = dev_get_drvdata(dev);
-
-	return sprintf(buf, "%u\n", RATE(ac->pdata.data_rate));
-}
-
-static ssize_t adxl34x_rate_store(struct device *dev,
-				  struct device_attribute *attr,
-				  const char *buf, size_t count)
-{
-	struct adxl34x *ac = dev_get_drvdata(dev);
-	unsigned char val;
-	int error;
-
-	error = kstrtou8(buf, 10, &val);
-	if (error)
-		return error;
-
-	mutex_lock(&ac->mutex);
-
-	ac->pdata.data_rate = RATE(val);
-	AC_WRITE(ac, BW_RATE,
-		 ac->pdata.data_rate |
-			(ac->pdata.low_power_mode ? LOW_POWER : 0));
-
-	mutex_unlock(&ac->mutex);
-
-	return count;
-}
-
-static DEVICE_ATTR(rate, 0664, adxl34x_rate_show, adxl34x_rate_store);
-
-static ssize_t adxl34x_autosleep_show(struct device *dev,
-				 struct device_attribute *attr, char *buf)
-{
-	struct adxl34x *ac = dev_get_drvdata(dev);
-
-	return sprintf(buf, "%u\n",
-		ac->pdata.power_mode & (PCTL_AUTO_SLEEP | PCTL_LINK) ? 1 : 0);
-}
-
-static ssize_t adxl34x_autosleep_store(struct device *dev,
-				  struct device_attribute *attr,
-				  const char *buf, size_t count)
-{
-	struct adxl34x *ac = dev_get_drvdata(dev);
-	unsigned int val;
-	int error;
-
-	error = kstrtouint(buf, 10, &val);
-	if (error)
-		return error;
-
-	mutex_lock(&ac->mutex);
-
-	if (val)
-		ac->pdata.power_mode |= (PCTL_AUTO_SLEEP | PCTL_LINK);
-	else
-		ac->pdata.power_mode &= ~(PCTL_AUTO_SLEEP | PCTL_LINK);
-
-	if (!ac->disabled && !ac->suspended && ac->opened)
-		AC_WRITE(ac, POWER_CTL, ac->pdata.power_mode | PCTL_MEASURE);
-
-	mutex_unlock(&ac->mutex);
-
-	return count;
-}
-
-static DEVICE_ATTR(autosleep, 0664,
-		   adxl34x_autosleep_show, adxl34x_autosleep_store);
-
-static ssize_t adxl34x_position_show(struct device *dev,
-				 struct device_attribute *attr, char *buf)
-{
-	struct adxl34x *ac = dev_get_drvdata(dev);
-	ssize_t count;
-
-	mutex_lock(&ac->mutex);
-	count = sprintf(buf, "(%d, %d, %d)\n",
-			ac->saved.x, ac->saved.y, ac->saved.z);
-	mutex_unlock(&ac->mutex);
-
-	return count;
-}
-
-static DEVICE_ATTR(position, S_IRUGO, adxl34x_position_show, NULL);
-
-#ifdef ADXL_DEBUG
-static ssize_t adxl34x_write_store(struct device *dev,
-				   struct device_attribute *attr,
-				   const char *buf, size_t count)
-{
-	struct adxl34x *ac = dev_get_drvdata(dev);
-	unsigned int val;
-	int error;
-
-	/*
-	 * This allows basic ADXL register write access for debug purposes.
-	 */
-	error = kstrtouint(buf, 16, &val);
-	if (error)
-		return error;
-
-	mutex_lock(&ac->mutex);
-	AC_WRITE(ac, val >> 8, val & 0xFF);
-	mutex_unlock(&ac->mutex);
-
-	return count;
-}
-
-static DEVICE_ATTR(write, 0664, NULL, adxl34x_write_store);
-#endif
-
-static struct attribute *adxl34x_attributes[] = {
-	&dev_attr_disable.attr,
-	&dev_attr_calibrate.attr,
-	&dev_attr_rate.attr,
-	&dev_attr_autosleep.attr,
-	&dev_attr_position.attr,
-#ifdef ADXL_DEBUG
-	&dev_attr_write.attr,
-#endif
-	NULL
-};
-
-static const struct attribute_group adxl34x_attr_group = {
-	.attrs = adxl34x_attributes,
-};
-
-static int adxl34x_input_open(struct input_dev *input)
-{
-	struct adxl34x *ac = input_get_drvdata(input);
-
-	mutex_lock(&ac->mutex);
-
-	if (!ac->suspended && !ac->disabled)
-		__adxl34x_enable(ac);
-
-	ac->opened = true;
-
-	mutex_unlock(&ac->mutex);
-
-	return 0;
-}
-
-static void adxl34x_input_close(struct input_dev *input)
-{
-	struct adxl34x *ac = input_get_drvdata(input);
-
-	mutex_lock(&ac->mutex);
-
-	if (!ac->suspended && !ac->disabled)
-		__adxl34x_disable(ac);
-
-	ac->opened = false;
-
-	mutex_unlock(&ac->mutex);
-}
-
-struct adxl34x *adxl34x_probe(struct device *dev, int irq,
-			      bool fifo_delay_default,
-			      const struct adxl34x_bus_ops *bops)
-{
-	struct adxl34x *ac;
-	struct input_dev *input_dev;
-	const struct adxl34x_platform_data *pdata;
-	int err, range, i;
-	unsigned char revid;
-
-	if (!irq) {
-		dev_err(dev, "no IRQ?\n");
-		err = -ENODEV;
-		goto err_out;
-	}
-
-	ac = kzalloc(sizeof(*ac), GFP_KERNEL);
-	input_dev = input_allocate_device();
-	if (!ac || !input_dev) {
-		err = -ENOMEM;
-		goto err_free_mem;
-	}
-
-	ac->fifo_delay = fifo_delay_default;
-
-	pdata = dev_get_platdata(dev);
-	if (!pdata) {
-		dev_dbg(dev,
-			"No platform data: Using default initialization\n");
-		pdata = &adxl34x_default_init;
-	}
-
-	ac->pdata = *pdata;
-	pdata = &ac->pdata;
-
-	ac->input = input_dev;
-	ac->dev = dev;
-	ac->irq = irq;
-	ac->bops = bops;
-
-	mutex_init(&ac->mutex);
-
-	input_dev->name = "ADXL34x accelerometer";
-	revid = AC_READ(ac, DEVID);
-
-	switch (revid) {
-	case ID_ADXL345:
-		ac->model = 345;
-		break;
-	case ID_ADXL346:
-		ac->model = 346;
-		break;
-	default:
-		dev_err(dev, "Failed to probe %s\n", input_dev->name);
-		err = -ENODEV;
-		goto err_free_mem;
-	}
-
-	snprintf(ac->phys, sizeof(ac->phys), "%s/input0", dev_name(dev));
-
-	input_dev->phys = ac->phys;
-	input_dev->dev.parent = dev;
-	input_dev->id.product = ac->model;
-	input_dev->id.bustype = bops->bustype;
-	input_dev->open = adxl34x_input_open;
-	input_dev->close = adxl34x_input_close;
-
-	input_set_drvdata(input_dev, ac);
-
-	__set_bit(ac->pdata.ev_type, input_dev->evbit);
-
-	if (ac->pdata.ev_type == EV_REL) {
-		__set_bit(REL_X, input_dev->relbit);
-		__set_bit(REL_Y, input_dev->relbit);
-		__set_bit(REL_Z, input_dev->relbit);
-	} else {
-		/* EV_ABS */
-		__set_bit(ABS_X, input_dev->absbit);
-		__set_bit(ABS_Y, input_dev->absbit);
-		__set_bit(ABS_Z, input_dev->absbit);
-
-		if (pdata->data_range & FULL_RES)
-			range = ADXL_FULLRES_MAX_VAL;	/* Signed 13-bit */
-		else
-			range = ADXL_FIXEDRES_MAX_VAL;	/* Signed 10-bit */
-
-		input_set_abs_params(input_dev, ABS_X, -range, range, 3, 3);
-		input_set_abs_params(input_dev, ABS_Y, -range, range, 3, 3);
-		input_set_abs_params(input_dev, ABS_Z, -range, range, 3, 3);
-	}
-
-	__set_bit(EV_KEY, input_dev->evbit);
-	__set_bit(pdata->ev_code_tap[ADXL_X_AXIS], input_dev->keybit);
-	__set_bit(pdata->ev_code_tap[ADXL_Y_AXIS], input_dev->keybit);
-	__set_bit(pdata->ev_code_tap[ADXL_Z_AXIS], input_dev->keybit);
-
-	if (pdata->ev_code_ff) {
-		ac->int_mask = FREE_FALL;
-		__set_bit(pdata->ev_code_ff, input_dev->keybit);
-	}
-
-	if (pdata->ev_code_act_inactivity)
-		__set_bit(pdata->ev_code_act_inactivity, input_dev->keybit);
-
-	ac->int_mask |= ACTIVITY | INACTIVITY;
-
-	if (pdata->watermark) {
-		ac->int_mask |= WATERMARK;
-		if (FIFO_MODE(pdata->fifo_mode) == FIFO_BYPASS)
-			ac->pdata.fifo_mode |= FIFO_STREAM;
-	} else {
-		ac->int_mask |= DATA_READY;
-	}
-
-	if (pdata->tap_axis_control & (TAP_X_EN | TAP_Y_EN | TAP_Z_EN))
-		ac->int_mask |= SINGLE_TAP | DOUBLE_TAP;
-
-	if (FIFO_MODE(pdata->fifo_mode) == FIFO_BYPASS)
-		ac->fifo_delay = false;
-
-	AC_WRITE(ac, POWER_CTL, 0);
-
-	err = request_threaded_irq(ac->irq, NULL, adxl34x_irq,
-				   IRQF_TRIGGER_HIGH | IRQF_ONESHOT,
-				   dev_name(dev), ac);
-	if (err) {
-		dev_err(dev, "irq %d busy?\n", ac->irq);
-		goto err_free_mem;
-	}
-
-	err = sysfs_create_group(&dev->kobj, &adxl34x_attr_group);
-	if (err)
-		goto err_free_irq;
-
-	err = input_register_device(input_dev);
-	if (err)
-		goto err_remove_attr;
-
-	AC_WRITE(ac, OFSX, pdata->x_axis_offset);
-	ac->hwcal.x = pdata->x_axis_offset;
-	AC_WRITE(ac, OFSY, pdata->y_axis_offset);
-	ac->hwcal.y = pdata->y_axis_offset;
-	AC_WRITE(ac, OFSZ, pdata->z_axis_offset);
-	ac->hwcal.z = pdata->z_axis_offset;
-	AC_WRITE(ac, THRESH_TAP, pdata->tap_threshold);
-	AC_WRITE(ac, DUR, pdata->tap_duration);
-	AC_WRITE(ac, LATENT, pdata->tap_latency);
-	AC_WRITE(ac, WINDOW, pdata->tap_window);
-	AC_WRITE(ac, THRESH_ACT, pdata->activity_threshold);
-	AC_WRITE(ac, THRESH_INACT, pdata->inactivity_threshold);
-	AC_WRITE(ac, TIME_INACT, pdata->inactivity_time);
-	AC_WRITE(ac, THRESH_FF, pdata->free_fall_threshold);
-	AC_WRITE(ac, TIME_FF, pdata->free_fall_time);
-	AC_WRITE(ac, TAP_AXES, pdata->tap_axis_control);
-	AC_WRITE(ac, ACT_INACT_CTL, pdata->act_axis_control);
-	AC_WRITE(ac, BW_RATE, RATE(ac->pdata.data_rate) |
-		 (pdata->low_power_mode ? LOW_POWER : 0));
-	AC_WRITE(ac, DATA_FORMAT, pdata->data_range);
-	AC_WRITE(ac, FIFO_CTL, FIFO_MODE(pdata->fifo_mode) |
-			SAMPLES(pdata->watermark));
-
-	if (pdata->use_int2) {
-		/* Map all INTs to INT2 */
-		AC_WRITE(ac, INT_MAP, ac->int_mask | OVERRUN);
-	} else {
-		/* Map all INTs to INT1 */
-		AC_WRITE(ac, INT_MAP, 0);
-	}
-
-	if (ac->model == 346 && ac->pdata.orientation_enable) {
-		AC_WRITE(ac, ORIENT_CONF,
-			ORIENT_DEADZONE(ac->pdata.deadzone_angle) |
-			ORIENT_DIVISOR(ac->pdata.divisor_length));
-
-		ac->orient2d_saved = 1234;
-		ac->orient3d_saved = 1234;
-
-		if (pdata->orientation_enable & ADXL_EN_ORIENTATION_3D)
-			for (i = 0; i < ARRAY_SIZE(pdata->ev_codes_orient_3d); i++)
-				__set_bit(pdata->ev_codes_orient_3d[i],
-					  input_dev->keybit);
-
-		if (pdata->orientation_enable & ADXL_EN_ORIENTATION_2D)
-			for (i = 0; i < ARRAY_SIZE(pdata->ev_codes_orient_2d); i++)
-				__set_bit(pdata->ev_codes_orient_2d[i],
-					  input_dev->keybit);
-	} else {
-		ac->pdata.orientation_enable = 0;
-	}
-
-	AC_WRITE(ac, INT_ENABLE, ac->int_mask | OVERRUN);
-
-	ac->pdata.power_mode &= (PCTL_AUTO_SLEEP | PCTL_LINK);
-
-	return ac;
-
- err_remove_attr:
-	sysfs_remove_group(&dev->kobj, &adxl34x_attr_group);
- err_free_irq:
-	free_irq(ac->irq, ac);
- err_free_mem:
-	input_free_device(input_dev);
-	kfree(ac);
- err_out:
-	return ERR_PTR(err);
-}
-EXPORT_SYMBOL_GPL(adxl34x_probe);
-
-int adxl34x_remove(struct adxl34x *ac)
-{
-	sysfs_remove_group(&ac->dev->kobj, &adxl34x_attr_group);
-	free_irq(ac->irq, ac);
-	input_unregister_device(ac->input);
-	dev_dbg(ac->dev, "unregistered accelerometer\n");
-	kfree(ac);
-
-	return 0;
-}
-EXPORT_SYMBOL_GPL(adxl34x_remove);
