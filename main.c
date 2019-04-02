@@ -11,14 +11,14 @@ bool write(uint8_t address, uint8_t value)
 
 bool read(uint8_t address, uint8_t *value)
 {
-  value = 0xFF;
+  *value = 0xF8;
   return true;
 }
 
  char *input;
   int main(int argc, char *argv[])
     {
-      setReadWriteInterfaces(write, read);
+      setReadWriteInterfaces(&write, &read);
       bool result = enterAutoSleepMode(10, 20);
       result = exitAutoSleepMode();
       result = enterLowPowerMode();

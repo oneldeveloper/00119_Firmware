@@ -2,7 +2,7 @@
 #include <stdint.h>
 
 
-void setReadWriteInterfaces(bool (*writeInterface)(uint8_t, uint8_t), bool (*readInterface)(uint8_t, uint8_t));
+void setReadWriteInterfaces(bool (*writeInterface)(uint8_t, uint8_t), bool (*readInterface)(uint8_t, uint8_t*));
 
 bool enterAutoSleepMode (uint8_t threshold, uint8_t time);
 bool exitAutoSleepMode();

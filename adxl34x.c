@@ -100,13 +100,13 @@
 
 
 //Write and read interface
-bool (*writeInterface)(uint8_t, uint8_t);
-bool (*readInterface)(uint8_t, uint8_t*);
+bool (*commWriteByte)(uint8_t, uint8_t);
+bool (*commReadByte)(uint8_t, uint8_t*);
 
-void setReadWriteInterfaces(bool (*writeInterface)(uint8_t, uint8_t), bool (*readInterface)(uint8_t, uint8_t))
+void setReadWriteInterfaces(bool (*write_Interface)(uint8_t, uint8_t), bool (*read_Interface)(uint8_t, uint8_t*))
 {
-	writeInterface = writeInterface;
-	readInterface = readInterface;
+	commWriteByte = write_Interface;
+	commReadByte = read_Interface;
 }
 
 
@@ -145,24 +145,17 @@ static const t_adxl34x_reg  adxl34x_reg_init = {
     0			//uint8_t fifo_status; 
 };
 
-bool device_write_byte(uint8_t address, uint8_t value)
-{
-  printf("Writing value %X in register %X\n", value, address);
-  return true;
-}
-
-bool device_read_byte(uint8_t address, uint8_t *readvalue);
 
 bool enterAutoSleepMode (uint8_t threshold, uint8_t time)
 {
-    if (writeInterface(THRESH_INACT, threshold) == false)
+    if (commWriteByte(THRESH_INACT, threshold) == false)
        return false;
-    if(writeInterface(TIME_INACT, time) == false)
+    if(commWriteByte(TIME_INACT, time) == false)
        return false;
 	//uint8_t power_ctl_save = adxl34x_reg.power_ctl;
 	uint8_t power_ctl_save = 0x81;
 	power_ctl_save |= PCTL_AUTO_SLEEP | PCTL_LINK;
-	if (writeInterface(POWER_CTL, power_ctl_save) == false)
+	if (commWriteByte(POWER_CTL, power_ctl_save) == false)
 	return false;
 	adxl34x_reg.power_ctl = power_ctl_save;
 	return true;
@@ -171,7 +164,7 @@ bool exitAutoSleepMode()
 {
 	uint8_t power_ctl_save = adxl34x_reg.power_ctl;
 	power_ctl_save &= ~PCTL_AUTO_SLEEP & ~PCTL_LINK;
-	if (device_write_byte(POWER_CTL, power_ctl_save) == false)
+	if (commWriteByte(POWER_CTL, power_ctl_save) == false)
 	return false;
 	adxl34x_reg.power_ctl = power_ctl_save;
 	return true;
@@ -180,7 +173,7 @@ bool enterStandByMode()
 {
 	uint8_t power_ctl_save = adxl34x_reg.power_ctl;
 	power_ctl_save &= ~PCTL_MEASURE;
-	if (device_write_byte(POWER_CTL, power_ctl_save) == false)
+	if (commWriteByte(POWER_CTL, power_ctl_save) == false)
 	return false;
 	adxl34x_reg.power_ctl = power_ctl_save;
 	return true;
@@ -189,7 +182,7 @@ bool exitStandByMode()
 {
 	uint8_t power_ctl_save = adxl34x_reg.power_ctl;
 	power_ctl_save |= PCTL_MEASURE;
-	if (device_write_byte(POWER_CTL, power_ctl_save) == false)
+	if (commWriteByte(POWER_CTL, power_ctl_save) == false)
 	return false;
 	adxl34x_reg.power_ctl = power_ctl_save;
 	return true;	
@@ -199,7 +192,7 @@ bool enterLowPowerMode()
 {
 	uint8_t bw_rate_save = adxl34x_reg.bw_rate;
 	bw_rate_save |= LOW_POWER;
-	if (device_write_byte(BW_RATE, bw_rate_save) == false)
+	if (commWriteByte(BW_RATE, bw_rate_save) == false)
 		return false;
 	adxl34x_reg.bw_rate = bw_rate_save;
 	return true;
@@ -208,7 +201,7 @@ bool exitLowPowerMode()
 {
 	uint8_t bw_rate_save = adxl34x_reg.bw_rate;
 	bw_rate_save &= ~LOW_POWER;
-	if (device_write_byte(BW_RATE, bw_rate_save) == false)
+	if (commWriteByte(BW_RATE, bw_rate_save) == false)
 		return false;
 	adxl34x_reg.bw_rate = bw_rate_save;
 	return true;
@@ -220,7 +213,7 @@ bool setDataRate(uint8_t rate)
 	uint8_t bw_rate_save = adxl34x_reg.bw_rate;
 	bw_rate_save &= 0xF0;
 	bw_rate_save |= rate;
-	if (device_write_byte(BW_RATE, bw_rate_save) == false)
+	if (commWriteByte(BW_RATE, bw_rate_save) == false)
 		return false;
 	adxl34x_reg.bw_rate = bw_rate_save;
 	return true;
@@ -262,7 +255,7 @@ bool interruptEnableDisable(bool data_ready, bool single_tap, bool double_tap, b
 		int_enable |= OVERRUN;
 	else
 		int_enable &= ~OVERRUN;
-	if (device_write_byte(INT_ENABLE, int_enable) == false)
+	if (commWriteByte(INT_ENABLE, int_enable) == false)
 		return false;
 	adxl34x_reg.int_enable = int_enable;
 	return true;				
@@ -304,7 +297,7 @@ bool interruptMap(bool data_ready, bool single_tap, bool double_tap, bool activi
 		int_map |= OVERRUN;
 	else
 		int_map &= ~OVERRUN;
-	if (device_write_byte(INT_MAP, int_map) == false)
+	if (commWriteByte(INT_MAP, int_map) == false)
 		return false;
 	adxl34x_reg.int_enable = int_map;
 	return true;	
@@ -317,7 +310,7 @@ bool interruptInvert(bool invert)
 		data_format |= INT_INVERT;
 	else
 		data_format &= ~INT_INVERT;
-	if (device_write_byte(DATA_FORMAT, data_format) == false)
+	if (commWriteByte(DATA_FORMAT, data_format) == false)
 		return false;
 	adxl34x_reg.data_format = data_format;
 	return true;	
@@ -326,7 +319,7 @@ bool interruptInvert(bool invert)
 bool getInterruptSource(t_adxl34x_reg *source)
 {
 	uint8_t int_source;
-	if (device_read_byte(INT_SOURCE, &int_source) == false)
+	if (commReadByte(INT_SOURCE, &int_source) == false)
 		return false;
 	source->int_source.data_ready = int_source & 0x80;
 	source->int_source.single_tap = int_source & 0x40;
@@ -343,7 +336,7 @@ bool setFifoMode(t_fifo_mode mode, uint8_t samples, bool trigMap)
 {
 	uint8_t fifo_ctl = (uint8_t)mode * 0x40 + (0x0F & samples) + (trigMap << 4);
 	
-	if (device_write_byte(FIFO_CTL, fifo_ctl) == false)
+	if (commWriteByte(FIFO_CTL, fifo_ctl) == false)
 		return false;
 	adxl34x_reg.fifo_ctl = fifo_ctl;
 }
@@ -351,7 +344,7 @@ bool setFifoMode(t_fifo_mode mode, uint8_t samples, bool trigMap)
 bool getFifoStatus(t_adxl34x_reg *status)
 {
 	uint8_t fifo_status;
-	if (device_read_byte(FIFO_STATUS, &fifo_status) == false)
+	if (commReadByte(FIFO_STATUS, &fifo_status) == false)
 		return false;
 	status->fifo_status.fifo_trig = fifo_status && 0x80;
 	status->fifo_status.entries = fifo_status & 0x3F;
@@ -360,13 +353,13 @@ bool getFifoStatus(t_adxl34x_reg *status)
 
 bool setOffset(int8_t x, int8_t y, int8_t z)
 {
-	if (device_write_byte(OFSX, x) == false)
+	if (commWriteByte(OFSX, x) == false)
 		return false;
 	adxl34x_reg.offset_x = x;
-	if (device_write_byte(OFSY, y) == false)
+	if (commWriteByte(OFSY, y) == false)
 		return false;
 	adxl34x_reg.offset_y = y;
-	if (device_write_byte(OFSZ, z) == false)
+	if (commWriteByte(OFSZ, z) == false)
 		return false;
 	adxl34x_reg.offset_z = z;
 	return true;
@@ -374,33 +367,33 @@ bool setOffset(int8_t x, int8_t y, int8_t z)
 
 bool setTapConfig(uint8_t threshold, uint8_t duration, uint8_t latent, uint8_t window)
 {
-	if (device_write_byte(THRESH_TAP, threshold) == false)
+	if (commWriteByte(THRESH_TAP, threshold) == false)
 	return false;
 	adxl34x_reg.thresh_tap = threshold;
-	if (device_write_byte(DUR, duration) == false)
+	if (commWriteByte(DUR, duration) == false)
 		return false;
 	adxl34x_reg.dur = duration;
-	if (device_write_byte(LATENT, latent) == false)
+	if (commWriteByte(LATENT, latent) == false)
 		return false;
 	adxl34x_reg.latent = latent;
-	if (device_write_byte(WINDOW, window) == false)
+	if (commWriteByte(WINDOW, window) == false)
 		return false;	
 	adxl34x_reg.window = window;
 	return true;
 }
 
-setActInactConfig(uint8_t threshold_act, uint8_t threshold_inact, uint8_t time_inact, uint8_t act_inact_ctl)
+bool setActInactConfig(uint8_t threshold_act, uint8_t threshold_inact, uint8_t time_inact, uint8_t act_inact_ctl)
 {
-	if (device_write_byte(THRESH_ACT, threshold_act) == false)
+	if (commWriteByte(THRESH_ACT, threshold_act) == false)
 		return false;
 	adxl34x_reg.threshold_activity = threshold_act;
-	if (device_write_byte(THRESH_INACT, threshold_inact) == false)
+	if (commWriteByte(THRESH_INACT, threshold_inact) == false)
 		return false;
 	adxl34x_reg.threshod_inactivity = threshold_inact;
-	if (device_write_byte(TIME_INACT, time_inact) == false)
+	if (commWriteByte(TIME_INACT, time_inact) == false)
 		return false;
 	adxl34x_reg.time_inactivity = time_inact;
-	if (device_read_byte(ACT_INACT_CTL, act_inact_ctl) == false)
+	if (commWriteByte(ACT_INACT_CTL, act_inact_ctl) == false)
 		return false;
 	adxl34x_reg.act_inact_ctl.ACT_ac_dc = act_inact_ctl & 0x80;
 	adxl34x_reg.act_inact_ctl.ACT_X_enable = act_inact_ctl & 0x40;
