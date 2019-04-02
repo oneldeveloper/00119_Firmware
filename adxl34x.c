@@ -99,52 +99,25 @@
 #define RANGE_PM_16g	3
 
 
-//Write and read interface
+//Write and read interfaces function pointer
 bool (*commWriteByte)(uint8_t, uint8_t);
 bool (*commReadByte)(uint8_t, uint8_t*);
-
-void setReadWriteInterfaces(bool (*write_Interface)(uint8_t, uint8_t), bool (*read_Interface)(uint8_t, uint8_t*))
+bool (*commWriteMultipleBytes)(uint8_t, uint8_t, uint8_t*);
+bool (*commReadMultipleBytes)(uint8_t, uint8_t, uint8_t*);
+//Write and read interfaces assignation
+void setReadWriteByteInterfaces(bool (*write_Interface)(uint8_t, uint8_t), bool (*read_Interface)(uint8_t, uint8_t*))
 {
 	commWriteByte = write_Interface;
 	commReadByte = read_Interface;
 }
-
+void setReadWriteMultipleByteInterfaces(bool (*writeInterface)(uint8_t, uint8_t, uint8_t*), bool (*readInterface)(uint8_t, uint8_t, uint8_t*))
+{
+	commWriteMultipleBytes = writeInterface;
+	commReadMultipleBytes = readInterface;
+}
 
 
 t_adxl34x_reg adxl34x_reg;
-static const t_adxl34x_reg  adxl34x_reg_init = {
-    0b11100101, //id
-    10,			//uint8_t thresh_tap = ; 
-    0,			//int8_t  offset_x = 0; 
-    0,			//int8_t  offset_y = 0; 
-    0,			//int8_t  offset_z = 0;
-    0,			//uint8_t dur = 0; 
-    0,			//uint8_t latent; 
-    0,			//uint8_t window;
-    5,			//uint8_t threshold_activity;
-    5,			//uint8_t threshod_inactivity;
-    1,			//uint8_t time_inactivity; 
-    0,			//uint8_t act_inact_ctl;
-    5,			//uint8_t threshold_ff;
-    1,			//uint8_t time_ff; 
-    0,			//uint8_t tap_axes; 
-    0,			//uint8_t act_tap_status; 
-    0,			//uint8_t bw_rate;
-    0,			//uint8_t power_ctl; 
-    0,			//uint8_t int_enable; 
-    0,			//uint8_t int_map;
-    0,			//uint8_t int_source; 
-    0,			//uint8_t data_format; 
-    0,			//uint8_t data_x0; 
-    0,			//uint8_t data_x1;
-    0,			//uint8_t data_y0;
-    0,			//uint8_t data_y1; 
-    0,			//uint8_t data_z0;
-    0,			//uint8_t data_z1;
-    0,			//uint8_t fifo_ctl; 
-    0			//uint8_t fifo_status; 
-};
-
 
 bool enterAutoSleepMode (uint8_t threshold, uint8_t time)
 {
@@ -404,4 +377,14 @@ bool setActInactConfig(uint8_t threshold_act, uint8_t threshold_inact, uint8_t t
 	adxl34x_reg.act_inact_ctl.INACT_Y_enable = act_inact_ctl & 0x02;
 	adxl34x_reg.act_inact_ctl.INACT_Z_enable = act_inact_ctl & 0x01;
 	return true;
+}
+
+bool initializeDevice(t_adxl34x_reg init_values)
+{
+	return commWriteMultipleBytes(29, THRESH_TAP, &init_values.thresh_tap);
+}
+
+bool readDeviceReg(t_adxl34x_reg *model)
+{
+	return commReadMultipleBytes(29, THRESH_TAP, &model->thresh_tap);
 }

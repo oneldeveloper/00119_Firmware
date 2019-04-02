@@ -2,16 +2,6 @@
 #include <stdint.h>
 
 
-void setReadWriteInterfaces(bool (*writeInterface)(uint8_t, uint8_t), bool (*readInterface)(uint8_t, uint8_t*));
-
-bool enterAutoSleepMode (uint8_t threshold, uint8_t time);
-bool exitAutoSleepMode();
-bool enterStandByMode();
-bool exitStandByMode();
-bool enterLowPowerMode();
-bool exitLowPowerMode();
-
-bool setDataRate(uint8_t rate);
 
 typedef enum { BYPASS = 0, FIFO = 1, STREAM = 2, TRIGGER = 3} t_fifo_mode;
 
@@ -308,6 +298,25 @@ between reads of sequential registers.*/
     entry is available at the output filter of the device.*/ 
     t_fifo_status fifo_status; 
 } t_adxl34x_reg;
+
+/* set the read write interfaces to the device*/
+void setReadWriteByteInterfaces(bool (*write_Interface)(uint8_t, uint8_t), bool (*read_Interface)(uint8_t, uint8_t*));
+void setReadWriteMultipleByteInterfaces(bool (*write_Interface)(uint8_t, uint8_t, uint8_t*), bool (*read_Interface)(uint8_t, uint8_t, uint8_t*));
+
+
+bool initializeDevice(t_adxl34x_reg init_values);
+bool readDeviceReg(t_adxl34x_reg *model);
+
+bool enterAutoSleepMode (uint8_t threshold, uint8_t time);
+bool exitAutoSleepMode();
+bool enterStandByMode();
+bool exitStandByMode();
+bool enterLowPowerMode();
+bool exitLowPowerMode();
+
+bool setDataRate(uint8_t rate);
+
+
 
 /* true enable interrupt
 * false disable interrupt*/
