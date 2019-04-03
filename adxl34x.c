@@ -379,6 +379,13 @@ bool setActInactConfig(uint8_t threshold_act, uint8_t threshold_inact, uint8_t t
 	return true;
 }
 
+bool getAccelerationVectors(int16_t *x, int16_t *y, int16_t *z)
+{
+    uint8_t array[6];
+    if(commReadMultipleBytes(6, DATA_X0, array) == false)
+        return false;
+}
+
 bool initializeDevice(t_adxl34x_reg init_values)
 {
 	return commWriteMultipleBytes(29, THRESH_TAP, &init_values.thresh_tap);
