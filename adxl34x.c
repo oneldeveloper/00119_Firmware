@@ -98,6 +98,38 @@
 #define RANGE_PM_8g		2
 #define RANGE_PM_16g	3
 
+static const t_adxl34x_reg  adxl34x_reg_self_test = {
+    0b11100101, //id
+    0xFF,		//uint8_t thresh_tap = ; 
+    0,			//int8_t  offset_x = 0; 
+    0,			//int8_t  offset_y = 0; 
+    0,			//int8_t  offset_z = 0;
+    0,			//uint8_t dur = 0; disable single tap
+    0,			//uint8_t latent; disable dluble tap
+    0,			//uint8_t window; disable double tap
+    0xFF,		//uint8_t threshold_activity;
+    0xFF,		//uint8_t threshod_inactivity;
+    0xFF,		//uint8_t time_inactivity; 
+    0,			//uint8_t act_inact_ctl; //disable thresholdsn
+    0xFF,		//uint8_t threshold_ff;
+    0xFF,		//uint8_t time_ff; 
+    0,			//uint8_t tap_axes; //disable taps axes
+    0,			//uint8_t act_tap_status; 
+    0x0A,		//uint8_t bw_rate; //low power off, 100Hz rate
+    0x08,		//uint8_t power_ctl; //only measure is onn all other control 
+    0,			//uint8_t int_enable; //disable all interrupts
+    0,			//uint8_t int_map;
+    0,			//uint8_t int_source;  
+    0x0B,		//uint8_t data_format; //full resolution, 16g range  
+    0,			//uint8_t data_x0; 
+    0,			//uint8_t data_x1;
+    0,			//uint8_t data_y0;
+    0,			//uint8_t data_y1; 
+    0,			//uint8_t data_z0;
+    0,			//uint8_t data_z1;
+    0,			//uint8_t fifo_ctl; 
+    1			//uint8_t fifo_status; 
+};
 
 //Write and read interfaces function pointer
 bool (*commWriteByte)(uint8_t, uint8_t);
@@ -379,11 +411,33 @@ bool setActInactConfig(uint8_t threshold_act, uint8_t threshold_inact, uint8_t t
 	return true;
 }
 
+bool setDataFormatConfig(bool justify, bool fullres, uint8_t range)
+{
+	uint8_t dataformat = adxl34x_reg.data_format;
+	dataformat &= 0xF0;
+	dataformat |= (fullres << 3);
+	dataformat |= (justify << 2);
+	dataformat |= (range & 0x03);
+	if (commWriteByte(DATA_FORMAT, dataformat) == false)
+		return false;
+	adxl34x_reg.data_format = dataformat;
+	return true;
+
+}
+
 bool getAccelerationVectors(int16_t *x, int16_t *y, int16_t *z)
 {
     uint8_t array[6];
-    if(commReadMultipleBytes(6, DATA_X0, array) == false)
+    if(commReadMultipleBytes(6, DATAX0, array) == false)
         return false;
+	*x = array[1] + (array[0] << 8);
+	*y = array[2] + (array[3] << 8);
+	return false;
+}
+
+bool performSelfTest()
+{
+
 }
 
 bool initializeDevice(t_adxl34x_reg init_values)

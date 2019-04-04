@@ -4,6 +4,8 @@
 
 
 typedef enum { BYPASS = 0, FIFO = 1, STREAM = 2, TRIGGER = 3} t_fifo_mode;
+typedef enum { JUSTIFY_RIGHT, JUSTIFY_LEFT } t_dataformat_justify;
+
 
 typedef struct {
     bool data_ready;
@@ -317,7 +319,7 @@ bool exitLowPowerMode();
 bool setDataRate(uint8_t rate);
 
 
-
+bool getAccelerationVectors(int16_t *x, int16_t *y, int16_t *z);
 /* true enable interrupt
 * false disable interrupt*/
 bool interruptEnableDisable(bool data_ready, bool single_tap, bool double_tap, bool activity,

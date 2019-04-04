@@ -33,7 +33,7 @@ bool readMul(uint8_t n, uint8_t address, uint8_t *value)
 
 static const t_adxl34x_reg  adxl34x_reg_init = {
     0b11100101, //id
-    10,			//uint8_t thresh_tap = ; 
+    0,			//uint8_t thresh_tap = ; 
     0,			//int8_t  offset_x = 0; 
     0,			//int8_t  offset_y = 0; 
     0,			//int8_t  offset_z = 0;
@@ -43,7 +43,7 @@ static const t_adxl34x_reg  adxl34x_reg_init = {
     5,			//uint8_t threshold_activity;
     5,			//uint8_t threshod_inactivity;
     1,			//uint8_t time_inactivity; 
-    0,			//uint8_t act_inact_ctl;
+    ,			//uint8_t act_inact_ctl;
     5,			//uint8_t threshold_ff;
     1,			//uint8_t time_ff; 
     0,			//uint8_t tap_axes; 
