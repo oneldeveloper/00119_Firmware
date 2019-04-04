@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "adxl34x.h"
+#include "mcc_generated_files/device_config.h";
+#include "mcc_generated_files/eusart1.h"
+#include "mcc_generated_files/spi1.h"
 
 bool write(uint8_t address, uint8_t value)
 {
@@ -62,8 +65,13 @@ static const t_adxl34x_reg  adxl34x_reg_init = {
 };
 
  char *input;
+ 
+ 
   int main(int argc, char *argv[])
     {
+      EUSART1_Initialize();
+      SPI1_Initialize();
+      
       setReadWriteByteInterfaces(&write, &read);
       setReadWriteMultipleByteInterfaces(&writeMul, readMul);     
       printf("Initialize device: %d\n", initializeDevice(adxl34x_reg_init));
@@ -71,5 +79,6 @@ static const t_adxl34x_reg  adxl34x_reg_init = {
       printf("Enter low power mode: %d\n", enterLowPowerMode());
       printf("Exit low power mode: %d\n", exitLowPowerMode());
       char c = getchar();
+      return 0;
     }
 
