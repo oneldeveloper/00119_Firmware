@@ -43,6 +43,7 @@
   </logicalFolder>
   <sourceRootList>
     <Elem>C:\Users\tec4.ele\MPLABXProjects\00119Repo.X</Elem>
+    <Elem>X:\Elettronica\Progetti\00119\embedded8bit</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
@@ -54,11 +55,11 @@
         <targetPluginBoard></targetPluginBoard>
         <platformTool>Simulator</platformTool>
         <languageToolchain>XC8</languageToolchain>
-        <languageToolchainVersion>2.05</languageToolchainVersion>
+        <languageToolchainVersion>1.34</languageToolchainVersion>
         <platform>3</platform>
       </toolsSet>
       <packs>
-        <pack name="PIC16F1xxxx_DFP" vendor="Microchip" version="1.0.62"/>
+        <pack name="PIC16F1xxxx_DFP" vendor="Microchip" version="1.0.38"/>
       </packs>
       <compileType>
         <linkerTool>

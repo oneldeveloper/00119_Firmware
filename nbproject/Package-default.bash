@@ -10,9 +10,9 @@ CND_CONF=default
 CND_DISTDIR=dist
 TMPDIR=build/${CND_CONF}/${IMAGE_TYPE}/tmp-packaging
 TMPDIRNAME=tmp-packaging
-OUTPUT_PATH=dist/${CND_CONF}/${IMAGE_TYPE}/00119Repo.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
-OUTPUT_BASENAME=00119Repo.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
-PACKAGE_TOP_DIR=00119repo.x/
+OUTPUT_PATH=dist/${CND_CONF}/${IMAGE_TYPE}/embedded8bit.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
+OUTPUT_BASENAME=embedded8bit.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
+PACKAGE_TOP_DIR=embedded8bit/
 
 # Functions
 function checkReturnCode
@@ -57,15 +57,15 @@ mkdir -p ${TMPDIR}
 
 # Copy files and create directories and links
 cd "${TOP}"
-makeDirectory ${TMPDIR}/00119repo.x/bin
+makeDirectory ${TMPDIR}/embedded8bit/bin
 copyFileToTmpDir "${OUTPUT_PATH}" "${TMPDIR}/${PACKAGE_TOP_DIR}bin/${OUTPUT_BASENAME}" 0755
 
 
 # Generate tar file
 cd "${TOP}"
-rm -f ${CND_DISTDIR}/${CND_CONF}/package/00119repo.x.tar
+rm -f ${CND_DISTDIR}/${CND_CONF}/package/embedded8bit.tar
 cd ${TMPDIR}
-tar -vcf ../../../../${CND_DISTDIR}/${CND_CONF}/package/00119repo.x.tar *
+tar -vcf ../../../../${CND_DISTDIR}/${CND_CONF}/package/embedded8bit.tar *
 checkReturnCode
 
 # Cleanup

@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "adxl34x.h"
-#include "mcc_generated_files/device_config.h";
-#include "mcc_generated_files/eusart1.h"
-#include "mcc_generated_files/spi1.h"
+//#include "mcc_generated_files/device_config.h";
+//#include "mcc_generated_files/eusart1.h"
+//#include "mcc_generated_files/spi1.h"
 
 bool write(uint8_t address, uint8_t value)
 {
@@ -43,7 +43,7 @@ static const t_adxl34x_reg  adxl34x_reg_init = {
     5,			//uint8_t threshold_activity;
     5,			//uint8_t threshod_inactivity;
     1,			//uint8_t time_inactivity; 
-    ,			//uint8_t act_inact_ctl;
+    0,			//uint8_t act_inact_ctl;
     5,			//uint8_t threshold_ff;
     1,			//uint8_t time_ff; 
     0,			//uint8_t tap_axes; 

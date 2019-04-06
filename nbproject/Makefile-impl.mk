@@ -24,7 +24,7 @@ CLEAN_SUBPROJECTS=${CLEAN_SUBPROJECTS_${SUBPROJECTS}}
 
 
 # Project Name
-PROJECTNAME=00119Repo.X
+PROJECTNAME=embedded8bit
 
 # Active Configuration
 DEFAULTCONF=default
