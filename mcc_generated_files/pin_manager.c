@@ -14,7 +14,7 @@
     This header file provides implementations for pin APIs for all pins selected in the GUI.
     Generation Information :
         Product Revision  :  PIC10 / PIC12 / PIC16 / PIC18 MCUs - 1.76
-        Device            :  PIC16LF15325
+        Device            :  PIC18F46K80
         Driver Version    :  2.11
     The generated drivers are tested against the following:
         Compiler          :  XC8 2.00
@@ -57,38 +57,34 @@ void PIN_MANAGER_Initialize(void)
     /**
     LATx registers
     */
+    LATE = 0x00;
+    LATD = 0x00;
     LATA = 0x00;
+    LATB = 0x00;
     LATC = 0x00;
 
     /**
     TRISx registers
     */
-    TRISA = 0x33;
-    TRISC = 0x2A;
+    TRISE = 0x07;
+    TRISA = 0xEF;
+    TRISB = 0xFF;
+    TRISC = 0x93;
+    TRISD = 0xFF;
 
     /**
     ANSELx registers
     */
-    ANSELC = 0x38;
-    ANSELA = 0x1B;
+    ANCON0 = 0xFF;
+    ANCON1 = 0x7B;
 
     /**
     WPUx registers
     */
-    WPUA = 0x00;
-    WPUC = 0x00;
+    WPUB = 0x00;
+    INTCON2bits.nRBPU = 1;
 
-    /**
-    ODx registers
-    */
-    ODCONA = 0x00;
-    ODCONC = 0x00;
 
-    /**
-    SLRCONx registers
-    */
-    SLRCONA = 0x1F;
-    SLRCONC = 0x3F;
 
 
 
@@ -96,16 +92,12 @@ void PIN_MANAGER_Initialize(void)
 
    
     
-	
-    RC0PPS = 0x15;   //RC0->MSSP1:SCK1;    
-    SSP1CLKPPS = 0x10;   //RC0->MSSP1:SCK1;    
-    RC4PPS = 0x0F;   //RC4->EUSART1:TX1;    
-    RC2PPS = 0x16;   //RC2->MSSP1:SDO1;    
-    SSP1DATPPS = 0x11;   //RC1->MSSP1:SDI1;    
 }
   
 void PIN_MANAGER_IOC(void)
 {   
+	// Clear global Interrupt-On-Change flag
+    INTCONbits.RBIF = 0;
 }
 
 /**

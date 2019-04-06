@@ -14,7 +14,7 @@
     This header file provides APIs for driver for EUSART1.
     Generation Information :
         Product Revision  :  PIC10 / PIC12 / PIC16 / PIC18 MCUs - 1.76
-        Device            :  PIC16LF15325
+        Device            :  PIC18F46K80
         Driver Version    :  2.1.0
     The generated drivers are tested against the following:
         Compiler          :  XC8 2.00
@@ -54,6 +54,7 @@
 #include <xc.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #ifdef __cplusplus  // Provide C++ Compatibility
 

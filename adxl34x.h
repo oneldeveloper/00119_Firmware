@@ -35,7 +35,7 @@ typedef struct {
 } t_act_inact_ctl;
 
 typedef struct {
-    const uint8_t   dev_id; 
+    uint8_t dev_id; 
     uint8_t thresh_tap; 
     int8_t  offset_x; 
     int8_t  offset_y; 
@@ -98,7 +98,7 @@ typedef struct {
     value. New samples of acceleration are then compared to this
     reference value, and if the magnitude of the difference exceeds
     the THRESH_ACT value, the device triggers an activity interrupt.*/
-    t_act_inact_ctl act_inact_ctl;
+    uint8_t act_inact_ctl;
     /*The THRESH_FF register is eight bits and holds the threshold
     value, in unsigned format, for free-fall detection. The acceleration on
     all axes is compared with the value in THRESH_FF to determine if
@@ -231,7 +231,7 @@ typedef struct {
     require multiple reads, as indicated in the FIFO mode descriptions
     in the FIFO section. Other bits, and the corresponding interrupts,
     are cleared by reading the INT_SOURCE register.*/
-    t_int_source int_source; 
+    uint8_t int_source; 
     /* D7 SELF_TEST, D6 SPI, D5 INT_INVERT, D4 = 0, D3 FULL_RES, D2 Justify D1-D0 Range
     The DATA_FORMAT register controls the presentation of data
     to Register 0x32 through Register 0x37. All data, except that for
@@ -298,15 +298,15 @@ between reads of sequential registers.*/
     stores a maximum of 32 entries, which equates to a maximum
     of 33 entries available at any given time because an additional
     entry is available at the output filter of the device.*/ 
-    t_fifo_status fifo_status; 
+    uint8_t fifo_status; 
 } t_adxl34x_reg;
 
 /* set the read write interfaces to the device*/
 void setReadWriteByteInterfaces(bool (*write_Interface)(uint8_t, uint8_t), bool (*read_Interface)(uint8_t, uint8_t*));
 void setReadWriteMultipleByteInterfaces(bool (*write_Interface)(uint8_t, uint8_t, uint8_t*), bool (*read_Interface)(uint8_t, uint8_t, uint8_t*));
 
-
-bool initializeDevice(t_adxl34x_reg init_values);
+bool readDeviceId( uint8_t *id);
+bool initializeDevice(t_adxl34x_reg *init_values);
 bool readDeviceReg(t_adxl34x_reg *model);
 
 bool enterAutoSleepMode (uint8_t threshold, uint8_t time);

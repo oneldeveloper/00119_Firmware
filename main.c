@@ -1,34 +1,54 @@
+#include <xc.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include "adxl34x.h"
-//#include "mcc_generated_files/device_config.h";
-//#include "mcc_generated_files/eusart1.h"
-//#include "mcc_generated_files/spi1.h"
+#include "mcc_generated_files/mcc.h"
 
 bool write(uint8_t address, uint8_t value)
 {
+    
   printf("Writing value %X in register %X\n", value, address);
   return true;
 }
 
 bool read(uint8_t address, uint8_t *value)
 {
-  *value = 0xF8;
-  return true;
+  CS_SetLow();
+  SPI_Exchange8bit(address);
+  value = SPI_Exchange8bit(NULL);
+  CS_SetHigh(); 
 }
 
 bool writeMul(uint8_t n, uint8_t address, uint8_t *value)
 {
-  for (int i = 0; i < n; i++)
-    printf("Writing value %X in register %X\n", *value++, address + i);
-  return true;  
+    CS_SetLow();
+    SPI_Exchange8bit(address);
+    uint8_t bytesWrite = SPI_Exchange8bitBuffer(value, n, NULL);
+    CS_SetHigh(); 
+    if (bytesWrite == n)      
+      return true;
+    return false;
 }
 
 bool readMul(uint8_t n, uint8_t address, uint8_t *value)
 {
-  *value = 0xF8;
-  return true;
+    CS_SetLow();
+    SPI_Exchange8bit(address);
+    uint8_t bytesRead = SPI_Exchange8bitBuffer(NULL, n, value);
+    CS_SetHigh(); 
+    if (bytesRead == n)      
+      return true;
+    return false;
+}
+
+void readAccData()
+{
+    int16_t x, y, z;
+    if (getAccelerationVectors(&x, &y, &z)== false)
+        printf("Failed to read acceleration\r\n");
+    else
+        printf("x=%5d, y=%5d, z=%5d\r\n", x, y, z);
 }
 
 static const t_adxl34x_reg  adxl34x_reg_init = {
@@ -40,17 +60,17 @@ static const t_adxl34x_reg  adxl34x_reg_init = {
     0,			//uint8_t dur = 0; 
     0,			//uint8_t latent; 
     0,			//uint8_t window;
-    5,			//uint8_t threshold_activity;
-    5,			//uint8_t threshod_inactivity;
-    1,			//uint8_t time_inactivity; 
+    0,			//uint8_t threshold_activity;
+    0,			//uint8_t threshod_inactivity;
+    0,			//uint8_t time_inactivity; 
     0,			//uint8_t act_inact_ctl;
-    5,			//uint8_t threshold_ff;
-    1,			//uint8_t time_ff; 
+    0,			//uint8_t threshold_ff;
+    0,			//uint8_t time_ff; 
     0,			//uint8_t tap_axes; 
     0,			//uint8_t act_tap_status; 
-    0,			//uint8_t bw_rate;
-    0,			//uint8_t power_ctl; 
-    0,			//uint8_t int_enable; 
+    0x07,			//uint8_t bw_rate;
+    0x08,			//uint8_t power_ctl; 
+    0x80,			//uint8_t int_enable; 
     0,			//uint8_t int_map;
     0,			//uint8_t int_source; 
     0,			//uint8_t data_format; 
@@ -69,16 +89,27 @@ static const t_adxl34x_reg  adxl34x_reg_init = {
  
   int main(int argc, char *argv[])
     {
-      EUSART1_Initialize();
-      SPI1_Initialize();
+      SYSTEM_Initialize();
+      INT0_SetInterruptHandler(readAccData);
+      INTERRUPT_GlobalInterruptEnable();
+      INTERRUPT_PeripheralInterruptEnable();
+      CS_SetHigh();          
+      setReadWriteByteInterfaces(write, read);     
+      setReadWriteMultipleByteInterfaces(writeMul, readMul);
+      __delay_ms(100);
+      uint8_t devId;
+      readDeviceId(&devId);
+      initializeDevice(&adxl34x_reg_init);
       
-      setReadWriteByteInterfaces(&write, &read);
-      setReadWriteMultipleByteInterfaces(&writeMul, readMul);     
-      printf("Initialize device: %d\n", initializeDevice(adxl34x_reg_init));
-      printf("ExitAutospeed mode: %d\n",exitAutoSleepMode());
-      printf("Enter low power mode: %d\n", enterLowPowerMode());
-      printf("Exit low power mode: %d\n", exitLowPowerMode());
-      char c = getchar();
-      return 0;
+      t_adxl34x_reg readDevice;
+      printf("read device: %d\n", readDeviceReg(&readDevice));
+      uint8_t *p = &readDevice;
+      for(int i = 0x1D; i < 0x1D + 29; i++)
+        printf("Reg 0x%2X = 0x%2X\r\n", i, *p++);
+      //printf("Initialize device: %d\n", initializeDevice(adxl34x_reg_init));
+      //printf("ExitAutospeed mode: %d\n",exitAutoSleepMode());
+      //printf("Enter low power mode: %d\n", enterLowPowerMode());
+      //printf("Exit low power mode: %d\n", exitLowPowerMode());
+      while(1);
     }
 
