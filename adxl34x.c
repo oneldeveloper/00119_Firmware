@@ -153,7 +153,7 @@ t_adxl34x_reg adxl34x_reg;
 
 bool readDeviceId( uint8_t *id)
 {
-	if (commReadByte(0x80, id) == false)
+	if (commReadByte(0x00, id) == false)
 		return false;
     return true;
 }
@@ -328,12 +328,13 @@ bool interruptInvert(bool invert)
 	return true;	
 }
 
-bool getInterruptSource(t_adxl34x_reg *source)
+bool getInterruptSource(uint8_t *source)
 {
 	uint8_t int_source;
 	if (commReadByte(INT_SOURCE, &int_source) == false)
 		return false;
-    source->int_source = int_source;
+    *source = int_source;
+    return true;
 	//source->int_source.data_ready = int_source & 0x80;
 	//source->int_source.single_tap = int_source & 0x40;
 	//source->int_source.double_tap = int_source & 0x20;
@@ -438,7 +439,7 @@ bool setDataFormatConfig(bool justify, bool fullres, uint8_t range)
 bool getAccelerationVectors(int16_t *x, int16_t *y, int16_t *z)
 {
     uint8_t array[6];
-    if(commReadMultipleBytes(6, DATAX0 + 0xC0, array) == false)
+    if(commReadMultipleBytes(6, DATAX0, array) == false)
         return false;
 	*x = array[0] + ((uint16_t)array[1] << 8);
 	*y = array[2] + ((uint16_t)array[3] << 8);
@@ -453,10 +454,10 @@ bool performSelfTest()
 
 bool initializeDevice(t_adxl34x_reg *init_values)
 {
-	return commWriteMultipleBytes(29, THRESH_TAP + 0x40, &init_values->thresh_tap);
+	return commWriteMultipleBytes(29, THRESH_TAP, &init_values->thresh_tap);
 }
 
 bool readDeviceReg(t_adxl34x_reg *model)
 {
-	return commReadMultipleBytes(29, THRESH_TAP + 0xC0, &model->thresh_tap);
+	return commReadMultipleBytes(29, THRESH_TAP, &model->thresh_tap);
 }

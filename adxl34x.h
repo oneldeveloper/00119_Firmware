@@ -331,6 +331,8 @@ bool interruptMap(bool data_ready, bool single_tap, bool double_tap, bool activi
 /* false keep interrupt trig active high
 * true make interrupt active low*/
 bool interruptInvert(bool invert);
-
+bool getInterruptSource(uint8_t *source);
 bool setOffset(int8_t x, int8_t y, int8_t z);
 bool setTapConfig(uint8_t threshold, uint8_t duration, uint8_t latent, uint8_t window);
+
+bool setActInactConfig(uint8_t threshold_act, uint8_t threshold_inact, uint8_t time_inact, uint8_t act_inact_ctl);
