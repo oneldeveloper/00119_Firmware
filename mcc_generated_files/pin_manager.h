@@ -65,6 +65,62 @@
 #define PULL_UP_ENABLED      1
 #define PULL_UP_DISABLED     0
 
+// get/set SensA0 aliases
+#define SensA0_TRIS                 TRISAbits.TRISA0
+#define SensA0_LAT                  LATAbits.LATA0
+#define SensA0_PORT                 PORTAbits.RA0
+#define SensA0_ANS                  ANCON0bits.ANSEL0
+#define SensA0_SetHigh()            do { LATAbits.LATA0 = 1; } while(0)
+#define SensA0_SetLow()             do { LATAbits.LATA0 = 0; } while(0)
+#define SensA0_Toggle()             do { LATAbits.LATA0 = ~LATAbits.LATA0; } while(0)
+#define SensA0_GetValue()           PORTAbits.RA0
+#define SensA0_SetDigitalInput()    do { TRISAbits.TRISA0 = 1; } while(0)
+#define SensA0_SetDigitalOutput()   do { TRISAbits.TRISA0 = 0; } while(0)
+#define SensA0_SetAnalogMode()      do { ANCON0bits.ANSEL0 = 1; } while(0)
+#define SensA0_SetDigitalMode()     do { ANCON0bits.ANSEL0 = 0; } while(0)
+
+// get/set SensA1 aliases
+#define SensA1_TRIS                 TRISAbits.TRISA1
+#define SensA1_LAT                  LATAbits.LATA1
+#define SensA1_PORT                 PORTAbits.RA1
+#define SensA1_ANS                  ANCON0bits.ANSEL1
+#define SensA1_SetHigh()            do { LATAbits.LATA1 = 1; } while(0)
+#define SensA1_SetLow()             do { LATAbits.LATA1 = 0; } while(0)
+#define SensA1_Toggle()             do { LATAbits.LATA1 = ~LATAbits.LATA1; } while(0)
+#define SensA1_GetValue()           PORTAbits.RA1
+#define SensA1_SetDigitalInput()    do { TRISAbits.TRISA1 = 1; } while(0)
+#define SensA1_SetDigitalOutput()   do { TRISAbits.TRISA1 = 0; } while(0)
+#define SensA1_SetAnalogMode()      do { ANCON0bits.ANSEL1 = 1; } while(0)
+#define SensA1_SetDigitalMode()     do { ANCON0bits.ANSEL1 = 0; } while(0)
+
+// get/set SensA2 aliases
+#define SensA2_TRIS                 TRISAbits.TRISA2
+#define SensA2_LAT                  LATAbits.LATA2
+#define SensA2_PORT                 PORTAbits.RA2
+#define SensA2_ANS                  ANCON0bits.ANSEL2
+#define SensA2_SetHigh()            do { LATAbits.LATA2 = 1; } while(0)
+#define SensA2_SetLow()             do { LATAbits.LATA2 = 0; } while(0)
+#define SensA2_Toggle()             do { LATAbits.LATA2 = ~LATAbits.LATA2; } while(0)
+#define SensA2_GetValue()           PORTAbits.RA2
+#define SensA2_SetDigitalInput()    do { TRISAbits.TRISA2 = 1; } while(0)
+#define SensA2_SetDigitalOutput()   do { TRISAbits.TRISA2 = 0; } while(0)
+#define SensA2_SetAnalogMode()      do { ANCON0bits.ANSEL2 = 1; } while(0)
+#define SensA2_SetDigitalMode()     do { ANCON0bits.ANSEL2 = 0; } while(0)
+
+// get/set SensA3 aliases
+#define SensA3_TRIS                 TRISAbits.TRISA3
+#define SensA3_LAT                  LATAbits.LATA3
+#define SensA3_PORT                 PORTAbits.RA3
+#define SensA3_ANS                  ANCON0bits.ANSEL3
+#define SensA3_SetHigh()            do { LATAbits.LATA3 = 1; } while(0)
+#define SensA3_SetLow()             do { LATAbits.LATA3 = 0; } while(0)
+#define SensA3_Toggle()             do { LATAbits.LATA3 = ~LATAbits.LATA3; } while(0)
+#define SensA3_GetValue()           PORTAbits.RA3
+#define SensA3_SetDigitalInput()    do { TRISAbits.TRISA3 = 1; } while(0)
+#define SensA3_SetDigitalOutput()   do { TRISAbits.TRISA3 = 0; } while(0)
+#define SensA3_SetAnalogMode()      do { ANCON0bits.ANSEL3 = 1; } while(0)
+#define SensA3_SetDigitalMode()     do { ANCON0bits.ANSEL3 = 0; } while(0)
+
 // get/set RB0 procedures
 #define RB0_SetHigh()            do { LATBbits.LATB0 = 1; } while(0)
 #define RB0_SetLow()             do { LATBbits.LATB0 = 0; } while(0)
@@ -128,6 +184,20 @@
 #define RC6_GetValue()              PORTCbits.RC6
 #define RC6_SetDigitalInput()    do { TRISCbits.TRISC6 = 1; } while(0)
 #define RC6_SetDigitalOutput()   do { TRISCbits.TRISC6 = 0; } while(0)
+
+// get/set Led aliases
+#define Led_TRIS                 TRISEbits.TRISE0
+#define Led_LAT                  LATEbits.LATE0
+#define Led_PORT                 PORTEbits.RE0
+#define Led_ANS                  ANCON0bits.ANSEL5
+#define Led_SetHigh()            do { LATEbits.LATE0 = 1; } while(0)
+#define Led_SetLow()             do { LATEbits.LATE0 = 0; } while(0)
+#define Led_Toggle()             do { LATEbits.LATE0 = ~LATEbits.LATE0; } while(0)
+#define Led_GetValue()           PORTEbits.RE0
+#define Led_SetDigitalInput()    do { TRISEbits.TRISE0 = 1; } while(0)
+#define Led_SetDigitalOutput()   do { TRISEbits.TRISE0 = 0; } while(0)
+#define Led_SetAnalogMode()      do { ANCON0bits.ANSEL5 = 1; } while(0)
+#define Led_SetDigitalMode()     do { ANCON0bits.ANSEL5 = 0; } while(0)
 
 /**
    @Param
