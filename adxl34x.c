@@ -330,10 +330,8 @@ bool interruptInvert(bool invert)
 
 bool getInterruptSource(uint8_t *source)
 {
-	uint8_t int_source;
-	if (commReadByte(INT_SOURCE, &int_source) == false)
+	if (commReadByte(INT_SOURCE + 0x80, source) == false)
 		return false;
-    *source = int_source;
     return true;
 	//source->int_source.data_ready = int_source & 0x80;
 	//source->int_source.single_tap = int_source & 0x40;
@@ -343,7 +341,6 @@ bool getInterruptSource(uint8_t *source)
 	//source->int_source.free_fall = int_source & 0x04;
 	//source->int_source.watermark = int_source & 0x02;
 	//source->int_source.overrun = int_source & 0x01;
-	return true;
 }
 
 bool setFifoMode(t_fifo_mode mode, uint8_t samples, bool trigMap)
@@ -353,12 +350,13 @@ bool setFifoMode(t_fifo_mode mode, uint8_t samples, bool trigMap)
 	if (commWriteByte(FIFO_CTL, fifo_ctl) == false)
 		return false;
 	adxl34x_reg.fifo_ctl = fifo_ctl;
+    return true;
 }
 
 bool getFifoStatus(t_adxl34x_reg *status)
 {
 	uint8_t fifo_status;
-	if (commReadByte(FIFO_STATUS, &fifo_status) == false)
+	if (commReadByte(FIFO_STATUS + 0x80, &fifo_status) == false)
 		return false;
     status->fifo_status = fifo_status;
 	//status->fifo_status.fifo_trig = fifo_status && 0x80;
@@ -439,7 +437,7 @@ bool setDataFormatConfig(bool justify, bool fullres, uint8_t range)
 bool getAccelerationVectors(int16_t *x, int16_t *y, int16_t *z)
 {
     uint8_t array[6];
-    if(commReadMultipleBytes(6, DATAX0, array) == false)
+    if(commReadMultipleBytes(6, DATAX0 + 0xC0, array) == false)
         return false;
 	*x = array[0] + ((uint16_t)array[1] << 8);
 	*y = array[2] + ((uint16_t)array[3] << 8);
@@ -449,15 +447,15 @@ bool getAccelerationVectors(int16_t *x, int16_t *y, int16_t *z)
 
 bool performSelfTest()
 {
-
+    return true;
 }
 
 bool initializeDevice(t_adxl34x_reg *init_values)
 {
-	return commWriteMultipleBytes(29, THRESH_TAP, &init_values->thresh_tap);
+	return commWriteMultipleBytes(29, THRESH_TAP +0x40, &init_values->thresh_tap);
 }
 
 bool readDeviceReg(t_adxl34x_reg *model)
 {
-	return commReadMultipleBytes(29, THRESH_TAP, &model->thresh_tap);
+	return commReadMultipleBytes(29, THRESH_TAP + 0xC0, &model->thresh_tap);
 }

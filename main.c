@@ -159,7 +159,7 @@ static t_adxl34x_reg  adxl34x_reg_init = {
       //printf("Enter low power mode: %d\n", enterLowPowerMode());
       //printf("Exit low power mode: %d\n", exitLowPowerMode());
       uint8_t s = sensivity + 2;
-      setActInactConfig(s * 2, s * 2  , 2, 0x22);
+      setActInactConfig(s , s   , 2, 0x22);
       interruptEnableDisable(false, false, false, true, true, false, false, false);
       while(1);
     }
