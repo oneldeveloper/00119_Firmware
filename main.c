@@ -4,6 +4,17 @@
 #include <stdbool.h>
 #include "adxl34x.h"
 #include "mcc_generated_files/mcc.h"
+#include "average.h"
+
+#define AVERAGE_SAMPLES 10
+
+int16_t samplesX[AVERAGE_SAMPLES];
+int16_t samplesY[AVERAGE_SAMPLES];
+int16_t samplesZ[AVERAGE_SAMPLES];
+int16_t *pSamplesX = samplesX;
+int16_t *pSamplesY = samplesY;
+int16_t *pSamplesZ = samplesZ;
+uint8_t samplesIndex = 0;
 
 bool write(uint8_t address, uint8_t value)
 {
@@ -48,7 +59,24 @@ void readAccData()
     if (getAccelerationVectors(&x, &y, &z)== false)
         printf("Failed to read acceleration\r\n");
     else
-        printf("x=%5d, y=%5d, z=%5d\r\n", x, y, z);
+    {
+        *pSamplesX++ = x;
+        *pSamplesY++ = y;
+        *pSamplesZ++ = z;
+        samplesIndex++;
+        if (samplesIndex < AVERAGE_SAMPLES)
+            return;
+        samplesIndex = 0;
+        pSamplesX = samplesX;
+        pSamplesY = samplesY;
+        pSamplesZ = samplesZ;
+        int16_t averageX, averageY, averageZ;
+        averageX = average(pSamplesX, AVERAGE_SAMPLES);
+        averageY = average(pSamplesY, AVERAGE_SAMPLES);
+        averageZ = average(pSamplesZ, AVERAGE_SAMPLES);
+        printf("%d\t%d\t%d\r\n", averageX, averageY, averageZ);
+    }
+        //printf("%d\t%d\t%d\r\n", x, y, z);
 }
 
 static const t_adxl34x_reg  adxl34x_reg_init = {
@@ -68,12 +96,12 @@ static const t_adxl34x_reg  adxl34x_reg_init = {
     0,			//uint8_t time_ff; 
     0,			//uint8_t tap_axes; 
     0,			//uint8_t act_tap_status; 
-    0x07,			//uint8_t bw_rate;
+    0x08,			//uint8_t bw_rate;
     0x08,			//uint8_t power_ctl; 
     0x80,			//uint8_t int_enable; 
     0,			//uint8_t int_map;
     0,			//uint8_t int_source; 
-    0,			//uint8_t data_format; 
+    0x04,			//uint8_t data_format; 
     0,			//uint8_t data_x0; 
     0,			//uint8_t data_x1;
     0,			//uint8_t data_y0;

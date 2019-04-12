@@ -330,18 +330,8 @@ bool interruptInvert(bool invert)
 
 bool getInterruptSource(t_adxl34x_reg *source)
 {
-	uint8_t int_source;
-	if (commReadByte(INT_SOURCE, &int_source) == false)
+	if (commReadByte(INT_SOURCE + 0x80, source) == false)
 		return false;
-    source->int_source = int_source;
-	//source->int_source.data_ready = int_source & 0x80;
-	//source->int_source.single_tap = int_source & 0x40;
-	//source->int_source.double_tap = int_source & 0x20;
-	//source->int_source.activity = int_source & 0x01;
-	//source->int_source.inactivity = int_source & 0x08;
-	//source->int_source.free_fall = int_source & 0x04;
-	//source->int_source.watermark = int_source & 0x02;
-	//source->int_source.overrun = int_source & 0x01;
 	return true;
 }
 
@@ -354,14 +344,11 @@ bool setFifoMode(t_fifo_mode mode, uint8_t samples, bool trigMap)
 	adxl34x_reg.fifo_ctl = fifo_ctl;
 }
 
-bool getFifoStatus(t_adxl34x_reg *status)
+bool getFifoStatus(uint8_t *status)
 {
 	uint8_t fifo_status;
-	if (commReadByte(FIFO_STATUS, &fifo_status) == false)
+	if (commReadByte(FIFO_STATUS + 0x80, status) == false)
 		return false;
-    status->fifo_status = fifo_status;
-	//status->fifo_status.fifo_trig = fifo_status && 0x80;
-	//status->fifo_status.entries = fifo_status & 0x3F;
 	return true;	
 }
 
