@@ -330,20 +330,9 @@ bool interruptInvert(bool invert)
 
 bool getInterruptSource(uint8_t *source)
 {
-	uint8_t int_source;
-	if (commReadByte(INT_SOURCE, &int_source) == false)
+	if (commReadByte(INT_SOURCE + 0x80, source) == false)
 		return false;
-    *source = int_source;
     return true;
-	//source->int_source.data_ready = int_source & 0x80;
-	//source->int_source.single_tap = int_source & 0x40;
-	//source->int_source.double_tap = int_source & 0x20;
-	//source->int_source.activity = int_source & 0x01;
-	//source->int_source.inactivity = int_source & 0x08;
-	//source->int_source.free_fall = int_source & 0x04;
-	//source->int_source.watermark = int_source & 0x02;
-	//source->int_source.overrun = int_source & 0x01;
-	return true;
 }
 
 bool setFifoMode(t_fifo_mode mode, uint8_t samples, bool trigMap)
@@ -357,12 +346,8 @@ bool setFifoMode(t_fifo_mode mode, uint8_t samples, bool trigMap)
 
 bool getFifoStatus(t_adxl34x_reg *status)
 {
-	uint8_t fifo_status;
-	if (commReadByte(FIFO_STATUS, &fifo_status) == false)
+	if (commReadByte(FIFO_STATUS + 0x80, status) == false)
 		return false;
-    status->fifo_status = fifo_status;
-	//status->fifo_status.fifo_trig = fifo_status && 0x80;
-	//status->fifo_status.entries = fifo_status & 0x3F;
 	return true;	
 }
 
@@ -411,14 +396,6 @@ bool setActInactConfig(uint8_t threshold_act, uint8_t threshold_inact, uint8_t t
 	if (commWriteByte(ACT_INACT_CTL, act_inact_ctl) == false)
 		return false;
     adxl34x_reg.act_inact_ctl = act_inact_ctl;
-	//adxl34x_reg.act_inact_ctl.ACT_ac_dc = act_inact_ctl & 0x80;
-	//adxl34x_reg.act_inact_ctl.ACT_X_enable = act_inact_ctl & 0x40;
-	//adxl34x_reg.act_inact_ctl.ACT_Y_enable = act_inact_ctl & 0x20;
-	//adxl34x_reg.act_inact_ctl.ACT_Z_enable = act_inact_ctl & 0x10;
-	//adxl34x_reg.act_inact_ctl.INACT_ac_dc = act_inact_ctl & 0x08;
-	//adxl34x_reg.act_inact_ctl.INACT_X_enable = act_inact_ctl & 0x04;
-	//adxl34x_reg.act_inact_ctl.INACT_Y_enable = act_inact_ctl & 0x02;
-	//adxl34x_reg.act_inact_ctl.INACT_Z_enable = act_inact_ctl & 0x01;
 	return true;
 }
 
@@ -439,7 +416,7 @@ bool setDataFormatConfig(bool justify, bool fullres, uint8_t range)
 bool getAccelerationVectors(int16_t *x, int16_t *y, int16_t *z)
 {
     uint8_t array[6];
-    if(commReadMultipleBytes(6, DATAX0, array) == false)
+    if(commReadMultipleBytes(6, DATAX0 + 0xC0, array) == false)
         return false;
 	*x = array[0] + ((uint16_t)array[1] << 8);
 	*y = array[2] + ((uint16_t)array[3] << 8);
@@ -454,10 +431,10 @@ bool performSelfTest()
 
 bool initializeDevice(t_adxl34x_reg *init_values)
 {
-	return commWriteMultipleBytes(29, THRESH_TAP, &init_values->thresh_tap);
+	return commWriteMultipleBytes(29, THRESH_TAP + 0x40, &init_values->thresh_tap);
 }
 
 bool readDeviceReg(t_adxl34x_reg *model)
 {
-	return commReadMultipleBytes(29, THRESH_TAP, &model->thresh_tap);
+	return commReadMultipleBytes(29, THRESH_TAP + 0xC0, &model->thresh_tap);
 }
