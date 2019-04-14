@@ -90,7 +90,7 @@ void handleAdxlIRQ()
     }
     if (intSource & 0x80)
     {
-        printf("INT Source Data Ready\r\n");
+        printf("Read Acceleration data\r\n");
         int16_t x, y, z;
         if (getAccelerationVectors(&x, &y, &z)== false)
             printf("Failed to read acceleration\r\n");
@@ -127,6 +127,8 @@ void handleAdxlIRQ()
     }
     if (intSource & 0x08)
     {
+        int16_t x, y, z;
+        getAccelerationVectors(&x, &y, &z);
         printf("Inactivity detected\r\n");
         interruptEnableDisable(false, false, false, true, true, false, false, false); //disable data ready interrupt
         Led_SetLow();
@@ -188,6 +190,14 @@ static t_adxl34x_reg  adxl34x_reg_init = {
       initializeDevice(&adxl34x_reg_init);
       
       t_adxl34x_reg readDevice;
+
+      //printf("Initialize device: %d\n", initializeDevice(adxl34x_reg_init));
+      //printf("ExitAutospeed mode: %d\n",exitAutoSleepMode());
+      //printf("Enter low power mode: %d\n", enterLowPowerMode());
+      //printf("Exit low power mode: %d\n", exitLowPowerMode());
+      uint8_t s = (sensivity /100) + 2;
+      setActInactConfig(s, s , 1, 0xAA);
+      interruptEnableDisable(false, false, false, true, true, false, false, false);
       if (readDeviceReg(&readDevice) == false)
       {
           printf("Reading device failed");
@@ -197,13 +207,6 @@ static t_adxl34x_reg  adxl34x_reg_init = {
       uint8_t *p = &readDevice.thresh_tap;
       for(int i = 0x1D; i < 0x1D + 29; i++)
         printf("Reg 0x%2X = 0x%2X\r\n", i, *p++);
-      //printf("Initialize device: %d\n", initializeDevice(adxl34x_reg_init));
-      //printf("ExitAutospeed mode: %d\n",exitAutoSleepMode());
-      //printf("Enter low power mode: %d\n", enterLowPowerMode());
-      //printf("Exit low power mode: %d\n", exitLowPowerMode());
-      uint8_t s = (sensivity /100) + 2;
-      setActInactConfig(s, s , 1, 0x22);
-      interruptEnableDisable(false, false, false, true, true, false, false, false);
       while(1);
     }
 
